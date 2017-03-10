@@ -1,0 +1,61 @@
+digraph G {
+  node [shape=box]
+  ModularAddition [label="+A (mod k)"]
+  PivotFlip [label="PivotFlip"]
+  LessOrEqual [label="B <= A"]
+  AddAndIncrement [label="+A+1"]
+  Subtract [label="-A"]
+  Add [label="+A"]
+  ControlledBigSubtract [label="controlled\n+A\nbig target"]
+  BigSubtract [label="-A\nbig target"]
+  BigAdd [label="+A\nbig target"]
+  ControlledIncrement [label="controlled\n++"]
+  ControlledDecrement [label="controlled\n--"]
+  Increment [label="++"]
+  BigSubtractAndDecrement [label="-A-1\nbig target"]
+ 
+  edge [label="see fig 12"]
+  ModularAddition -> PivotFlip;
+  
+  edge [label="see fig 8"]
+  PivotFlip -> LessOrEqual;
+  
+  edge [label="see fig 9"]
+  PivotFlip -> ControlledBigSubtract;
+  
+  edge [label="invert input"]
+  LessOrEqual -> AddAndIncrement;
+  
+  edge [label="invert input"]
+  LessOrEqual -> BigSubtractAndDecrement
+  
+  edge [label="invert input"]
+  AddAndIncrement -> Subtract;
+  
+  edge [label="reverse gate order"]
+  Subtract -> Add;
+  
+  edge [label="see fig ???11???"]
+  ControlledBigSubtract-> BigSubtract;
+  
+  edge [label="reverse gate order"]
+  BigSubtract -> BigAdd;
+  
+  edge [label="see fig 2"]
+  BigAdd -> ControlledIncrement;
+  
+  edge [label="see fig 2"]
+  BigAdd -> ControlledDecrement;
+  
+  edge [label="see fig ????"]
+  ControlledIncrement -> Increment;
+  
+  edge [label="see fig 1"]
+  Increment -> Subtract;
+  
+  edge [label="reverse gate order"]
+  ControlledDecrement -> ControlledIncrement;
+  
+  edge [label="invert input"]
+  BigSubtractAndDecrement -> BigAdd;
+} 

@@ -8,20 +8,22 @@
 \maketitle
 
 \begin{abstract}
-We describe classical reversible constructions, that require at most 1 ancilla in an unspecified state, for incrementing a register in $O(N)$ depth and size, for modular addition of one register into another in $O(N)$ depth and size, and for modular addition of a compile-time constant into a register in $O(N)$ depth and $O(N \lg N)$ size.
-We note some applications of the constructions, such as performing Shor's algorithm on an $n$-bit product with only $2n+1$ qubits.
+We describe classical and quantum circuits for performing reversible arithmetic using at most 1 ancilla in an unknown state.
+Our constructions can perform incrementation, comparisons, addition, and modular addition with classical circuits of linear size and depth.
+We also show how to perform modular offset, improving the best known space requirements for Shor's algorithm from $2n+2$ qubits to $2n+1$ qubits, in linear depth and $O(n \lg n)$ size.
 \end{abstract}
 
 \section{Introduction}
 
 When constructing quantum circuits, or classical reversible circuits, an important resource is the number of available ancilla.
-Traditionally [[[where? who?]]], an ancilla is a bit initialized into a {\em known} state, available for use by the circuit.
-But "dirty" ancilla, that are in an unknown state that must be preserved, are also a useful resource [[[where? who? haner2016]]].
-Although clean ancilla are better than dirty ancilla for making compact simple circuits [[[example?]]], dirty ancilla are more readily available  because any unused bit in a circuit can be temporarily borrowed as a dirty ancilla.
+An ancilla qubit is an extra qubit, on top of the qubits used for input and output, available for use as temporary workspace.
+Ancilla may be initialized to a known state ("clean bit"), or be given to the circuit in an unknown state ("dirty bit") that must be restored before the circuit finishes.
+Clean bits are more valuable, allowing for simpler and more compact circuit constructions, but dirty bits are more plentiful, because any temporarily unused qubit is a borrowable dirty bit.
 
-The ability to borrow dirty ancilla from other parts of the circuit makes circuit constructions that require only dirty ancilla flexible, especially when space-constrained or when proper ancilla may be far away [[[(e.g. surface code)]]].
-For example, [haner2016] used dirty ancilla to cut the cost of performing Shor's algorithm on an $n$-bit number, using only $2n+2$ qubits, from ???? to $O(n^3)$ depth and $O(n^3 \lg n)$ size.
-In this paper we improve on [haner2016]'s result by cutting the number of required qubits from $2n+2$ to $2n+1$.
+The ability for part of a circuit to borrow dirty bits from another part of the same circuit makes circuit constructions that require only dirty bits very flexible.
+Especially in situations with space constraints, or on circuit topologies where clean ancilla are too far away to be acquired quickly.
+For example, \cite{haner2016} improves the cost of performing Shor's algorithm, when limited to using only $2n+2$ qubits, to $O(n^3)$ depth and $O(n^3 \lg n)$ size by using an offset ("constant addition") construction that borrows dirty bits from one register while offsetting the other.
+We improve on \cite{haner2016} by cutting the number of required qubits from $2n+2$ to $2n+1$.
 
 The paper is structured as follows.
 Sections ??? through ??? describe various circuit constructions.
@@ -33,35 +35,52 @@ Section ??? applies those circuit constructions to exist problems.
 All constructions assume a 2s-complement representation of integers.
 All circuit diagrams with multi-wire integer operations put the least significant bit towards the top.
 
-\section{$O(N)$ inline adder}
+\section{$O(N)$ inline adders}
 
-[van2004] describes a reversible adder with $O(N)$ depth and $O(N)$ size, requiring a single clean ancilla.
-The ancilla must be off, or else the result is incremented into returning $a+b+1$ instead of $a+b$.
+In \cite{van2004}, a reversible adder with $O(N)$ depth and $O(N)$ size, requiring a single clean ancilla, is described.
+If the ancilla is not initialized in the off state, the target register ends up storing $a+b+1$ instead of $a+b$.
 
-The need for the ancilla to be clean can be fixed by conditionally NOT-ing the source and target registers before and after the addition when the carry is on.
-Because $\lnot x = -x-1$, temporarily inverting the target turns the addition into a subtraction.
-Temporarily inverting the source turns the subtraction back into an addition, but also introduces an extra shift by -1.
-The -1 cancels the carry's +1 effect.
+The need for the ancilla to be clean can be fixed by inverting (bitwise-NOT-ing) the source and target registers before and after the addition when the carry is on.
+Because $\lnot x = -x-1$, and the registers are the same size, temporarily inverting the target effectively turns the addition into a subtraction.
+Temporarily inverting the source turns the subtraction back into an addition, but also introduces an extra shift by -1, cancelling out the +1 error.
 
-On top of this improvement, the carry role can be merged into the most-significant-bit of the source register.
-Although the MSB can't invert itself, the circuit still works because we don't need an overflow signal that distinguishes between the MSB toggling from on to off instead of from off to on.
-
-The improved reversible adder is shown in figure \ref{fig:inlineadder}.
-Note that, because the source register is used as workspace, it must be at least as large as the target register.
+On top of allowing the ancilla to be dirty, the ancilla's role can be merged into the most-significant-bit (MSB) of the source register.
+As shown in figure \ref{fig:inlineadder}, addition of same-sized registers can be performed {\em inline}, with no ancilla at all!
 
 \begin{figure}
   \centering
   \includegraphics[totalheight=3cm]{inline-adder.png}
-  \caption{\em Adder using no ancilla and $\Theta(N)$ CNOTs and CSWAPs. Based on [van2004].}
+  \caption{\em Same-register-size adder using no ancilla, $6N-3$ CNOTs, and $2N-2$ CSWAPs. Based on \cite{van2004}.}
   \label{fig:inlineadder}
 \end{figure}
 
 To perform subtraction instead of addition: run the circuit in reverse, temporarily invert the target register by bordering the circuit with NOT gates on the target, or invert the CSWAP controls.
 
+Because the source register is used as workspace, the construction in figure \ref{fig:inlineadder} only works when the source register is the same size as the target register.
+When the source register is larger, the issue is easily avoided by ignoring the high bits of the source register.
+When the target register is larger, the workaround is more difficult.
+Not only is there insufficient workspace, the register sizes being different breaks the logical-negation trick that allowed the carry signal bit to be dirty.
+
+The problems caused by the target register being larger can be overcome by using the increment and decrement constructions from the next section.
+(Note that they use only the same-size adder.)
+The carry signal can be forwarded into the high part of the target register with a controlled increment.
+The MSB of the source register can be free'd for use as a borrowed dirty bit by performing the MSB's controlled increment.
+Finally, the extra increment caused by the borrowed dirty bit being on can be cancelled with a controlled decrement.
+See the circuit diagram in figure \ref{fig:inline-adder-into-large}.
+
+\begin{figure}
+  \centering
+  \includegraphics[totalheight=3cm]{inline-adder-into-large.png}
+  \caption{\em
+      Adder with target larger than source, using no ancilla.
+      Uses increment constructions that use the same-size adder.}
+  \label{fig:inline-adder-into-large}
+\end{figure}
+
 \section{$O(N)$ incrementer}
 
-Note that a register can be incremented by subtracting both $x$ and $\neg x = -x-1$ from it for any $x$.
-When $N$ dirty ancilla are available, this can be done directly as shown in figure \ref{fig:double-sub-increment}.
+A register can be incremented by subtracting both $x$ and $\neg x = -x-1$ from it, for any $x$.
+When $N$ dirty bits are available, $x$ comes from the register defined by those $N$ bits, as shown in figure \ref{fig:double-sub-increment}.
 
 \begin{figure}
   \centering
@@ -70,143 +89,163 @@ When $N$ dirty ancilla are available, this can be done directly as shown in figu
   \label{fig:double-sub-increment}
 \end{figure}
 
-An increment gate can be decomposed into halves where the top half is incremented only if all of the bottom bits are on, and then the bottom half is incremented.
-By borrowing the top half, the bottom half can be incremented with the double-subtraction trick.
-But the trick doesn't work on the top half, because the top half can't be borrowed when being controlled by it.
+To improve from $N$ dirty bits to a single dirty bit, we break the increment operation into two halves.
+A top half that is incremented only if all of the bottom bits are on, and a bottom half that is unconditionally incremented.
+The bottom half can be incremented with the double-subtraction trick by borrowing the top half.
+But the trick doesn't work on the top half, because the bottom half can't be borrowed when it is being used as a control.
 
-A workaround for this is to change the second subtraction to an addition, and to conditionally toggle the target bits instead of the input bits.
-When the condition isn't satisfied, the addition and subtraction cancel each other.
-When the condition is satisfied, the addition inverts into a second subtraction and the input is subtracted from the target twice.
-However, because we are conditioning on the input bits all being on, the input must be -1 and the target must have been incremented by 2.
-To halve the +2 into a +1, left-shift the target and use a dirty bit as its LSB.
+To work around not being able to operate on the borrowed bits while them as a control, start with the double-subtraction trick but change the second subtraction to an addition and conditionally toggle the target bits instead of the input bits.
+When the condition isn't satisfied, the addition and subtraction will cancel each other.
+When the condition is satisfied, the addition is inverted into a subtraction.
+Both the subtraction and addition-turned-subtraction fire, subtracting the input register from the target register twice.
+However, because we are conditioning on the input bits all being on, the input must be -1.
+Therefore the target was incremented by 2.
+To halve the +2 into a +1, prepend a dirty LSB onto the target register as shown in \ref{fig:compact-increment}.
 
 \begin{figure}
   \centering
   \includegraphics[totalheight=1.5cm]{compact-increment.png}
-  \caption{\em Odd-sized $\Theta(N)$ increment with 1 dirty ancilla.}
+  \caption{\em Odd-sized $O(N)$ increment with 1 dirty ancilla.}
   \label{fig:compact-increment}
 \end{figure}
 
-The described incrementer construction is shown in figure \ref{fig:compact-increment}.
-However, because the adder/subtracter construction requires the target and source registers to be the same size, this incrementer construction only works on odd-sized registers.
+The incrementer construction shown in .
+Because the adder/subtracter construction used by the incrementer in figure \ref{fig:compact-increment} requires the target and source registers to be the same size, the construction only works on odd-sized registers.
 For even-sized registers, another minor variation on the conditionally-invert-addition-into-subtraction-with-logical-negation technique is used.
 The construction is shown in \ref{fig:compact-increment-even}.
-Note that it is easily modified to perform efficient increments with arbitrarily many controls.
 
 \begin{figure}
   \centering
   \includegraphics[totalheight=2cm]{compact-increment-even.png}
-  \caption{\em Even-sized $\Theta(N)$ increment with 1 dirty ancilla.}
+  \caption{\em Even-sized $O(N)$ increment with 1 dirty ancilla.}
   \label{fig:compact-increment-even}
 \end{figure}
 
 As with addition and subtraction, you can turn an increment into a decrement either by reversing the gate order, by bordering the circuit with NOT gates, or by inverting all of the controls.
+Also, increment gates can be controlled by using another invert-input-and-output trick (see figures \ref{} and \ref{}).
 
-Our incrementer is classically optimal in asymptotic size and number of ancilla, but not depth.
-The size is asymptotically optimal because any incrementer must touch all $n$ bits.
-The number of ancilla is classically optimal, assuming we want to reduce to a fixed-size gate set, because the parity of the permutation performed by an increment operation is odd but the parity of the permutation performed by a classical gate that doesn't cover the entire circuit is even.
-Therefore, without a dirty bit to use as workspace, no classical circuit can perform an increment gate.
+Note that, unlike with addition, it is impossible to create a classical incrementer that uses no ancilla.
+The parity of the permutation performed by an increment operation is odd, but the parity of the permutation performed by any classical gate that doesn't cover the entire circuit is even.
 Quantumly, the parity barrier can be bypassed by using partial rotations (see figure \ref{fig:bootstrap-ancilla}).
 
 \begin{figure}
   \centering
-  \includegraphics[totalheight=1.3cm]{ancilla-bootstrap.png}
-  \caption{\em Bootstrapping dirty ancilla out of an increment gate using quantum operations.}
+  \includegraphics[totalheight=1.4cm]{ancilla-bootstrap.png}
+  \caption{\em Bootstrapping dirty ancilla out of an increment gate using quantum operations.
+  The $i^{\text{frac}}$ operation is implemented by a column of $Z^{2^{-k}}$ gates.
+  The 'frac' refers to the fraction $v/2^d$, where $v$ is the computational-basis value in the register and $d$ is the size of the register.}
   \label{fig:bootstrap-ancilla}
 \end{figure}
 
-\section{$O(N \lg N)$ constant $\text{PivotFlip}$}
+\section{$O(N)$ inline comparisons}
+
+Comparison operations toggle a target bit based on the relationship between two input registers.
+
+The is-B-less-than-A comparison is implemented by subtracting $A$ out of $B$ with the target bit appended to $B$, then adding $A$ into $B$ without the target bit appended.
+See figure \ref{fig:comparison-less}.
+
+\begin{figure}
+  \centering
+  \includegraphics[totalheight=3cm]{comparison-less.png}
+  \caption{\em Toggling a target bit if one register is less than another, without using ancilla.}
+  \label{fig:comparison-less}
+\end{figure}
+
+The same idea is used for is-B-less-than-or-equal-to-A, except $A+1$ is subtracted and added instead of $A$.
+The extra $\pm 1$ is performed by increment and decrement gates, as shown in figure \ref{fig:comparison-leq}.
+When the two registers are the same size, the increment gate can be omitted by inverting the $A$ and $B$ registers during the addition.
+
+$>$ and $\geq$ comparisons are done by performing the opposite comparison ($\leq$ and $<$ respectively) and inverting the result by toggling the target.
+To perform a comparison when the $B$ register is smaller than the $A$ register, swap their roles and use the opposite comparison.
+
+\begin{figure}
+  \centering
+  \includegraphics[totalheight=3cm]{comparison-leq.png}
+  \caption{\em Toggling a target bit if one register is less than or equal to another, without using ancilla.}
+  \label{fig:comparison-leq}
+\end{figure}
+
+\section{$\text{PivotFlip}$}
 
 A pivot-flip operation reverses the order of states less than or equal to a given pivot value.
 For example, a pivot-flip with the pivot equal to 3 would swap $|0\rangle$ and $|3\rangle$, swap $|1\rangle$ and $|2\rangle$, and leave all other states untouched.
-We will use pivot-flips later, when implementing modular addition.
+Pivot-flips are useful for implementing cyclic operations, such as modular addition.
 
-For concreteness, the exact permutation of a pivot-flip is:
+The exact permutation performed by a pivot-flip with pivot equal to $k$ is:
 
 $$\text{PivotFlip}_k = \sum_{i=0}^k |k-i\rangle \langle i| + \sum_{i=k+1}^{N-1} |i\rangle \langle i|$$
 
+And the overall permutation, including the pivot input, is:
+
+$$\text{PivotFlip} = \sum_{k=0}^{N-1} |k\rangle \langle k| \otimes \text{PivotFlip}_{k}$$
+
 To perform a pivot-flip efficiently, we use the fact that $x \rightarrow \lnot(x - a)$ nearly does what is required.
-However, instead of doing nothing to the elements past the pivot, it also flips those elements as shown in figure \ref{fig:double-flip}.
+As shown in figure \ref{fig:double-flip}, the permutation $x \rightarrow \lnot(x - a)$ flips below the pivot but also above the pivot.
+However, because $x \rightarrow \lnot(x - a)$ is its own inverse and doesn't change whether any value is less than or equal to the pivot, the input can be controlled by dirty comparisons against the pivot.
+By applying $x \rightarrow \lnot(x - a)$ twice, controlled by a dirty bit that is toggled by the comparison, the desired effect is achieved (see figure \ref{fig:const-pivot-flip}).
+
+For states that are less than or equal to $A$, only one of the controlled flips happens.
+For other states, the controlled flip happens no times or two times, undoing itself.
 
 \begin{figure}
   \centering
-  \includegraphics[totalheight=7cm]{double-flip.png}
-  \caption{\em Subtraction followed by logical negation performs a flip both above and below the pivot.}
+  \includegraphics[totalheight=4cm]{double-flip.png}
+  \caption{\em Subtraction followed by logical negation performs flips both above and below $k$.}
   \label{fig:double-flip}
 \end{figure}
 
-Note that $x \rightarrow \lnot(x - a)$ is its own inverse and maintains the invariant that a given value will cause an underflow when subtracting $a$.
-So, by applying the operation twice, controlled by a dirty bit that is toggled by the underflow signal, the desired effect is achieved.
-The part of the range below the pivot does trigger the underflow, so only one of the controlled flips happens.
-The part of the range above the pivot does not cause an underflow, and so flips no times or two times, undoing itself.
-
-The resulting pivot-flip circuit is shown in figure \ref{fig:const-pivot-flip}.
-
 \begin{figure}
   \centering
-  \includegraphics[totalheight=2cm]{pivot-flip.png}
+  \includegraphics[totalheight=2.7cm]{pivot-flip.png}
   \caption{\em Pivot flip circuit.
-  Note that the top wire bundle is a compile-time constant.
-  The underflow toggle is done with an $n+1$-bit subtraction then an $n$-bit addition.
-  [[[Requires an extra dirty bit for the n+1-bit subtraction?]]]
-  The controlled subtractions are done by controlling every generated operation.}
+  When the top wire bundle is a register, the subtractions are controlled by replacing the CNOTs in figure \ref{fig:inlineadder} with CCNOTs.
+  When the top wire bundle is a compile-time constant, the subtractions use the construction from \cite{haner2016} and are controlled as shown in figure \ref{fig:controlled-offset}.}
   \label{fig:const-pivot-flip}
 \end{figure}
 
-Because the pivot is a compile-time constant, and so there is no source register workspace, the inline adder construction can't be used.
-Instead, we use the constant-adder from [haner2016].
-That adder requires $O(N)$ depth and $O(N \lg N)$ size, and therefore so does the constant-pivot-flip circuit.
+\begin{figure}
+  \centering
+  \includegraphics[totalheight=3.1cm]{controlled-offset.png}
+  \caption{\em Offset circuit from \cite{haner2016}, modified to include a control.}
+  \label{fig:controlled-offset}
+\end{figure}
 
-\section{$O(N \lg N)$ Modular Constant-Adder}
+The cost of a $\text{PivotFlip}$ depends on if the pivot is a compile-time constant or not.
+When the pivot is input from another register, the $O(N)$ inline adder can be used.
+But when the pivot is a constant, the $O(N \lg N)$ size and $O(N)$ depth offset gate from \cite{haner2016} is used instead (note: they refer to it as a constant addition gate).
+
+\section{$O(N \lg N)$ Modular Addition and Offset}
 
 A modular addition is three pivot flips.
-To add $a$ modulo $n$, perform a pivot-flip at $n-a$, a pivot-flip at $n$, and then a pivot-flip at $a$.
+To add $a$ into a register modulo $r$, perform pivot-flips with the pivot at $r-1-a$, then $r-1$, then $a$.
+See figure \ref{fig:modular-add}.
 
-[[[diagram]]]
+\begin{figure}
+  \centering
+  \includegraphics[totalheight=1.7cm]{modular-addition.png}
+  \caption{\em Modular addition circuit.
+  The $+r$ offset gates require $O(N \lg N)$ size.
+  The pivot-flips require a dirty bit and that a constant.}
+  \label{fig:modular-add}
+\end{figure}
 
-Because the modular addition does a constant number of pivot-flips, its resource usage is identical: one [[[two?]]] dirty bits, $O(N)$ depth, and $O(N \lg N)$ size.
+Note that we have implemented modular addition in terms of normal addition.
+This fact is obfuscated by the number of constructions used but, as shown in figure \ref{fig:modular-dependencies}, addition and offset (constant addition) are the only operations not defined in terms of another operations.
 
-\section{$O(N)$ $\text{PivotFlip}$}
+\begin{figure}
+  \centering
+  \includegraphics[totalheight=18cm]{modular-add-graph.png}
+  \caption{\em
+      Dependency graph of constructions used to create a classical reversible modular adder / modular offset gates using only 1 dirty bit.}
+  \label{fig:modular-dependencies}
+\end{figure}
 
-For completeness, we also discuss how to do a pivot-flip when the pivot is stored in a register instead of a compile-time constant.
-The original construction doesn't work in this case because it uses an extra bit in the source register.
-
-To work around the problem we propagate the increment into the operations on the target.
-[[[But the addition sizes don't match up?]]]
-
-[[[Maybe just ignore the increment size problem, then fixup with a conditioned all-flip?]]]
-
-Note that, when storing in a register, we offset the pivot $k$ by one.
-This is to avoid the redundancy $\text{PivotFlip}_0 = \text{PivotFlip}_1 = I$ and to move the flip-all operation $\text{PivotFlip}_{N}$ into range.
-Concretely, we want to perform this permutation:
-
-$$\text{RegisterPivotFlip} = \sum_{k=0}^{N-1} |k\rangle \langle k| \otimes \text{PivotFlip}_{k+1}$$
-
-Basically we do this by just inlining the increments and decrements into the addition operations or by using that other thing I tried.
-
-\section{$\Theta(N)$ Modular Addition}
-
-Same high-level construction as the constant modular adder.
-Do three pivot flips, but register-based instead of constant-based.
-This reduces the size cost from $O(N \lg N)$ to $O(N)$.
 
 \section{Applications}
 
 Shor's algorithm in $2n+1$ qubits.
 
-
-
-
-
-References:
-
-haner2016 https://arxiv.org/abs/1611.07995
-Factoring using 2n+2 qubits with Toffoli based modular multiplication
-Thomas Häner, Martin Roetteler, Krysta M. Svore
-
-van2004
-Optimal Design of A Reversible Full Adder
-YVAN VAN RENTERGEM AND ALEXIS DE VOS
-2004
+\bibliographystyle{plain}
+\bibliography{citations}
 
 \end{document}
