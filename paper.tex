@@ -2,15 +2,16 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \title{Efficient Reversible Arithmetic Circuits using a Dirty Bit}
-\author{et al}
+\author{Craig Gidney}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-We describe classical and quantum circuits for performing reversible arithmetic using at most 1 ancilla in an unknown state.
-Our constructions can perform incrementation, comparisons, addition, and modular addition with classical circuits of linear size and depth.
-We also show how to perform modular offset, improving the best known space requirements for Shor's algorithm from $2n+2$ qubits to $2n+1$ qubits, in linear depth and $O(n \lg n)$ size.
+\em
+We present efficient quantum and reversible classical circuits for performing incrementation, addition, comparisons, modular addition, and modular offset using no ancilla or 1 ancilla in an unknown state.
+We use these circuits to improve the best known space requirements for Shor's algorithm from $2n+2$ qubits to $2n+1$ qubits, without increasing the depth or size complexity.
+[[[FIND OTHER APPLICATIONS]]]
 \end{abstract}
 
 \section{Introduction}
@@ -89,6 +90,13 @@ When $N$ dirty bits are available, $x$ comes from the register defined by those 
   \label{fig:double-sub-increment}
 \end{figure}
 
+\begin{figure}
+  \centering
+  \includegraphics[totalheight=4cm]{fourier-addition.png}
+  \caption{\em Controlled-increment from fourier addition. [[[NOT MENTIONED]]] [[[CITE THE PAPER THAT INTRODUCED THE IDEA]]]}
+  \label{fig:fourier-addition}
+\end{figure}
+
 To improve from $N$ dirty bits to a single dirty bit, we break the increment operation into two halves.
 A top half that is incremented only if all of the bottom bits are on, and a bottom half that is unconditionally incremented.
 The bottom half can be incremented with the double-subtraction trick by borrowing the top half.
@@ -122,7 +130,21 @@ The construction is shown in \ref{fig:compact-increment-even}.
 \end{figure}
 
 As with addition and subtraction, you can turn an increment into a decrement either by reversing the gate order, by bordering the circuit with NOT gates, or by inverting all of the controls.
-Also, increment gates can be controlled by using another invert-input-and-output trick (see figures \ref{} and \ref{}).
+Also, increment gates can be controlled by using another invert-input-and-output trick (see figures \ref{fig:controlled-increment-odd} and \ref{fig:controlled-increment-even}).
+
+\begin{figure}
+  \centering
+  \includegraphics[totalheight=2cm]{controlled-increment-odd.png}
+  \caption{\em Odd-sized $O(N)$ controlled increment with 1 dirty ancilla.}
+  \label{fig:controlled-increment-odd}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[totalheight=2.5cm]{controlled-increment-even.png}
+  \caption{\em Even-sized $O(N)$ controlled increment with 1 dirty ancilla.}
+  \label{fig:controlled-increment-even}
+\end{figure}
 
 Note that, unlike with addition, it is impossible to create a classical incrementer that uses no ancilla.
 The parity of the permutation performed by an increment operation is odd, but the parity of the permutation performed by any classical gate that doesn't cover the entire circuit is even.
@@ -214,7 +236,7 @@ The cost of a $\text{PivotFlip}$ depends on if the pivot is a compile-time const
 When the pivot is input from another register, the $O(N)$ inline adder can be used.
 But when the pivot is a constant, the $O(N \lg N)$ size and $O(N)$ depth offset gate from \cite{haner2016} is used instead (note: they refer to it as a constant addition gate).
 
-\section{$O(N \lg N)$ Modular Addition and Offset}
+\section{$O(N \lg N)$ Modular Addition and Modular Offset}
 
 A modular addition is three pivot flips.
 To add $a$ into a register modulo $r$, perform pivot-flips with the pivot at $r-1-a$, then $r-1$, then $a$.
@@ -225,7 +247,7 @@ See figure \ref{fig:modular-add}.
   \includegraphics[totalheight=1.7cm]{modular-addition.png}
   \caption{\em Modular addition circuit.
   The $+r$ offset gates require $O(N \lg N)$ size.
-  The pivot-flips require a dirty bit and that a constant.}
+  The pivot-flips require a dirty bit.}
   \label{fig:modular-add}
 \end{figure}
 
@@ -240,12 +262,21 @@ This fact is obfuscated by the number of constructions used but, as shown in fig
   \label{fig:modular-dependencies}
 \end{figure}
 
-
 \section{Applications}
 
 Shor's algorithm in $2n+1$ qubits.
 
+[[[Surely there are more? Need to look around.]]]
+
+\section{Conclusion}
+
+[[[TODO]]]
+
 \bibliographystyle{plain}
 \bibliography{citations}
+
+[[[Surely there are more?]]]
+
+[[[Previous paper constructing each type of circuit shown here, and how they compare.]]]
 
 \end{document}
