@@ -3,4 +3,7 @@
 *.log
 *.pdf
 *.gz
-
+*.bbl
+*.out
+*.bib~
+*.blg
