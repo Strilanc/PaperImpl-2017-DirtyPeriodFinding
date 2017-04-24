@@ -27,14 +27,15 @@ In this paper, at great cost to the constant factors in the gate count and depth
 
 Our paper is structured as follows.
 The introduction describes the various sections and also itself for no discernible reason.
-In section \ref{sec:construct} we iteratively reduce period finding into simpler and simpler arithmetic operations, until we reach constant-sized gates, while tracking the number of required dirty ancilla.
-Then, in section \ref{sec:costs}, we discuss the novelty and comparative costs of the presented arithmetic circuit constructions.
+In section \ref{sec:construct} we describe all the circuit constructions needed to reduce period finding into constant-sized gates, while tracking the number of required dirty ancilla.
+Then, in section \ref{sec:costs}, we discuss the novelty and comparative costs of the presented circuit constructions.
 Finally, section \ref{sec:conclusion} concludes and summarizes.
 
 All constructions assume a 2s-complement representation of integers.
 Multi-qubit arithmetic operations always have the least significant bit towards the top.
+All dirty qubit counts are for classical Toffoli-based constructions, without using the quantum ancilla bootstrap trick noted in figure \ref{fig:bootstrap-ancilla}.
 For clarity, circuit diagrams will divide operations into separate input and output parts, with inputs shaded gray, when applicable.
-For completeness, even when the period finding reduction doesn't produce a controlled version of an operation, we provide controllable constructions of that operation that scale well with the number of controls.
+For completeness, even when the period finding reduction doesn't produce a controlled version of an operation, we always provide controllable constructions that scale linearly with the number of controls.
 
 
 \section{Period Finding into Toffolis} \label{sec:construct}
@@ -42,26 +43,30 @@ For completeness, even when the period finding reduction doesn't produce a contr
 \subsection{Period Finding}
 
 A high-level circuit for period finding, the core quantum subroutine of Shor's quantum factoring algorithm \cite{Shor1999}, is shown in figure \ref{fig:period-finding}.
+The circuit starts by preparing a uniform superposition $|\psi_0\rangle = \sqrt{2^{-n}} \sum_{k=0}^{2^n} |k\rangle$, then uses the $\times B^A {\pmod R}$ operation to separate that superposition into equivalence classes modulo the unknown period $p$ of that operation.
+That is to say, w.l.o.g. the state ends up being $|\psi_{1,x}\rangle = \sqrt{2^{-n}/p} \sum_{k=0}^{2^n/p} |pk + x \rangle$ for some $x$.
+The circuit then applies an inverse Fourier transform and samples the output.
+Using a classical continued fraction algorithm, the sample can be used to estimate the period.
 
-Because period-finding measures all qubits immediately after performing a quantum Fourier transform, most of the transformed qubits can be measured earlier than shown.
-In fact, each qubit can be measured so early that the next does not even need to be initialized yet!
+Because period-finding measures all qubits immediately after performing a QFT, most of the transformed qubits can be measured earlier than shown.
+In fact, each qubit can be measured so early that the next qubit needed for the QFT does not even need to be initialized yet!
 Only one of the qubits in the phase-estimation register needs to be present at a time, and so the phase register can be reduced to a single repeatedly-used qubit \cite{beauregard2003}.
 Figure \ref{fig:period-finding-solo-phase-qubit} shows a period-finding circuit with this property.
 
 The period-finding circuit in figure \ref{fig:period-finding-solo-phase-qubit} is our high-level starting point.
-It uses (a) controlled modular multiplication, (b) measurement, (c) X-axis rotations parametrized by previous measurements, and (d) qubit resets.
+It uses (a) controlled modular multiplication, (b) measurement, (c) X-axis rotations classically parametrized by previous measurements, and (d) qubit resets.
 The only non-trivial operation is (a), the controlled modular multiplication of an $n$-qubit register (requiring $n-1$ dirty ancilla and 1 clean ancilla using our constructions).
 
 We perform modular multiplication with multiply-accumulates and a second clean register as in \cite{beauregard2003}.
-However, to allow the second register to be dirty, it is convenient to pair each modular multiplication with an inverse and negated multiplication on another register.
+However, to allow the second register to be mostly dirty, we note that each modular multiplication on the first register causes an inverse and negated multiplication on the second register.
 We will refer to this combined operation as a ``bimultiply".
 
 Note that we must preserve the state of the second register, but bimultiplication trashes that state with many multiplications by unknown constants.
-However, because the first register is initialized to store 1 and gets multiplied by constants inverse to the ones trashing the second register, we can fix the second register by measuring the first register and using its value to perform a clean-up bimultiplication after the usual end of the circuit.
+However, because the first register is initialized to $|1\rangle$ and gets multiplied by constants inverse to the ones trashing the second register, we can fix the second register by measuring the first register and using its value to perform a clean-up bimultiplication after the usual end of the circuit.
 Figure \ref{fig:period-finding-solo-phase-qubit-explicit-dirty-register} shows this construction.
 
-If the second register contained a value larger than $R$, it would end up trashed despite the final clean-up operation.
 Our modular circuit constructions do not guarantee that out-of-range values (i.e. values not below the modulus $R$) are well behaved.
+If the second register contained a value larger than $R$, it would end up trashed despite the final clean-up operation.
 To avoid this problem, we require that the registers have minimal size $n = \lceil \lg_2(R-1) \rceil$ and that the second register's most-significant-bit (MSB) be a clean qubit initialized to zero.
 
 \begin{figure}
@@ -73,7 +78,7 @@ To avoid this problem, we require that the registers have minimal size $n = \lce
 	High-level period finding circuit \cite{Shor1999}.
 	$R$ is the modulus being queried, $B$ is a randomly chosen base, $n$ is the number of bits needed to store $R$, and $p \in \Theta(n)$ controls the precision of the phase estimation step.
     The triangles indicate how many ancilla are needed ``behind the scenes", by our constructions, to perform an operation.
-	Recovering the period requires classically processing the sampled output with a continued fractions algorithm.
+	Recovering the period requires classical post-processing of the sampled output.
   }
   \label{fig:period-finding}
 \end{figure}
@@ -107,64 +112,67 @@ To avoid this problem, we require that the registers have minimal size $n = \lce
 
 \subsection{Modular Bimultiplication}
 
-As in \cite{beauregard2003}, we perform controlled modular multiplication with a second register and modular scaled-multiply-accumulates operations.
-However, because the second register is dirty, we need three scaled-multiply-accumulates instead of the usual two.
+As in \cite{beauregard2003}, we perform controlled modular multiplication with a second register and modular scaled-accumulate operations.
+However, because the second register is dirty, we need three scaled-accumulates instead of the usual two.
 
 As with all other modular arithmetic circuits in this paper, we make no guarantees about the circuit's behavior when either of the input registers is out of range (i.e. have values not below $R$).
 
 Suppose that the two registers start in the state $(a, b)$, working modulo $R$.
-By multiply-adding the first register times $K$ into the second register, the system advances to $(a, b+aK)$.
-Then a multiply-subtract times $K^{-1}$ out of the first register puts the system into the state $(a-bK^{-1}-aKK^{-1}, b+aK)$, which is just $(-bK^{-1}, b+aK)$.
-Next, we cancel the $b$ term in the second register by multiply-adding the first register times $K$ into it again, leaving $(-bK^{-1}, b+aK-bK^{-1} \cdot K)$ which is simply $(-bK^{-1}, aK)$.
+By scale-adding the first register times $K$ into the second register, the system advances to $(a, b+aK)$.
+Then a scale-subtract times $K^{-1}$ out of the first register puts the system into the state $(a-bK^{-1}-aKK^{-1}, b+aK)$, which is just $(-bK^{-1}, b+aK)$.
+Next, we cancel the $b$ term in the second register by scale-adding the first register times $K$ into it again, leaving $(-bK^{-1}, b+aK-bK^{-1} \cdot K)$ which is simply $(-bK^{-1}, aK)$.
 Finally, we swap to $(aK, bK^{-1})$.
 The overall effect is to multiply the first register by $K$ and the second register by $-K^{-1}$, as desired.
 See figure \ref{fig:controlled-modular-multiply} for the circuit diagram.
 
 In the case where $K$ has no multiplicative inverse modulo $R$, this construction will not work (it would define an invalid irreversible operation).
-However, that would mean $K$ is a factor of $R$, a case which the very lucky user can check and handle classically before invoking a quantum period finding circuit.
+However, that would mean $K$ is a factor of $R$, a case that the very lucky user can check for and handle classically before invoking a quantum period finding circuit.
 
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{assets/controlled-modular-multiply.png}
   \caption{\em
-    Performing a modular bimultiplication with three scaled-multiply-accumulates and a swap.
+    Controlled modular bimultiplication, with a constant multiplier $K$, using three modular scaled-accumulates and a swap.
     $K$ must have a multiplicative inverse modulo $R$.
+    Uses no ancilla, $O(c + n^2 \lg n)$ gates, and $O(c + n^2)$ depth where $c$ is the number of controls and $n$ is the register size.
   }
   \label{fig:controlled-modular-multiply}
 \end{figure}
 
 
-\subsection{Modular Scaled-Multiply-Accumulation}
+\subsection{Modular Scaled-Accumulation}
 
-To perform scaled-multiply-accumulation, we use a shift-and-add approach similar to \cite{beauregard2003}.
-We right-shift (i.e. divide by $2 {\pmod R}$) the target register $n-1$ times, then begin iteratively left-shifting (i.e. multiplying it by 2) and adding $K$ into the target conditioned on the most significant bit of the input, then the next most significant bit, and so forth.
+To perform scaled-accumulate, we use a shift-and-add approach similar to \cite{beauregard2003}.
+We right-shift (i.e. divide by $2 {\pmod R}$) the target register $n-1$ times, then begin iteratively left-shifting (i.e. multiplying it by 2) and adding $K$ into the target.
+We condition the first modular addition on the most significant bit of the input, the second addition on the next most significant bit, and so forth.
 (The more significant bits go first because their effects must be hit by more left-shifts.)
-See figure \ref{fig:controlled-modular-multiply-accumulate}.
+See figure \ref{fig:controlled-modular-scale-accumulate}.
 
-The conditional offset operations need one dirty bit, and the modular doubling need two, but there are more than enough unused bits available to borrow, so the circuit as a whole doesn't require any dirty bits.
+The conditional offset operations need one dirty bit, and the modular doublings need two, but for non-trivial $n$ there are more than enough unused bits available to borrow, so the circuit as a whole doesn't require any dirty bits.
 
 Note that the modular doublings require $R$ to be odd, since otherwise the operation would be irreversible and non-unitary.
 However, given that in the intended use case $R$ is a number to be factored, it is reasonable to require callers to have factored out multiples of two beforehand.
+
+As will all circuits presented in this paper (except the period-finding circuit), we define the construction of the inverse operation to be the same circuit but run in reverse order with each sub-operation inverted.
+A decrement is just a reversed increment, a division is just a reversed multiplication, etc.
 
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{assets/controlled-modular-multiply-accumulate.png}
   \caption{\em
-    Reducing a modular multiply-accumulate into the modular equivalent of shift-and-add.
-    Assumes $R$ is odd.
+    Reducing a controlled modular scale-accumulate, with a constant multiplier $K$, into the modular equivalent of shift-and-add.
+    Requires the modulus $R$ to be odd.
+    Uses no ancilla, $O(c + n^2 \lg n)$ gates, and $O(c + n^2)$ depth where $c$ is the number of controls and $n$ is the register size.
   }
-  \label{fig:controlled-modular-multiply-accumulate}
+  \label{fig:controlled-modular-scale-accumulate}
 \end{figure}
 
 
 \subsection{Modular Doubling}
 
-To multiply a register by 2 modulo an odd $R$, we use pivot-flips (see section \ref{sec:pivot-flips}) and subtraction to align the two halves of the input space on the MSB boundaries.
-Then we finish the job with a left-rotate.
+To multiply a register by 2 modulo an odd $R$, we use pivot-flips (see section \ref{sec:pivot-flips}) and subtraction to align the two halves of the input space to MSB boundaries.
+After the two halves are aligned, a left-rotate completes the operation.
 See figure \ref{fig:modular-double}.
-
-To invert the doubling, i.e. to divide by 2 instead of multiplying by 2, recurse and reverse: invert each operation in the construction, then apply the operations in reverse order. 
-Except for period finding, all circuits presented in this paper can be inverted (e.g. from addition to subtraction) with recurse-and-reverse.
 
 \begin{figure}
   \centering
@@ -172,6 +180,7 @@ Except for period finding, all circuits presented in this paper can be inverted 
   \caption{\em
     Controlled modular doubling in $O(c + n \lg n)$ gates, $O(c + n)$ depth, with 2 dirty ancilla.
     $R$ must be odd.
+    Uses 2 dirty ancilla, $O(c + n \lg n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
   }
   \label{fig:modular-double}
 \end{figure}
@@ -183,8 +192,8 @@ As shown in figure \ref{fig:mod-add-from-pivot-flip-bars}, a modular addition is
 To add $A$ into a register modulo $R$, perform pivot-flips with the pivot at $R-A$, then $R$, then $A$.
 See figure \ref{fig:controlled-modular-add} for the circuit.
 
-Interestingly, modular addition only requires a dirty bit if it's {\em not} controlled.
-And when performing modular offset (i.e. adding a compile-time constant to a register), {\em two} dirty bits are required whether or not the operation is controlled.
+Interestingly, modular addition can use its own controls as dirty bits that would otherwise be required.
+For modular offset (i.e. adding a compile-time constant into a register), the two dirty bits are required whether or not the operation is controlled.
 See figure \ref{fig:controlled-modular-offset}.
 
 \begin{figure}
@@ -193,7 +202,7 @@ See figure \ref{fig:controlled-modular-offset}.
   \caption{\em
      Modular addition of $A \pmod{R}$ can be done with three pivot flips.
      One at $R-A$, then one at $R$, then one at $A$.
-     Requires $A \leq R$ (or else the operation will trash the target).
+     Requires $A \leq R$.
    }
   \label{fig:mod-add-from-pivot-flip-bars}
 \end{figure}
@@ -202,8 +211,8 @@ See figure \ref{fig:controlled-modular-offset}.
   \centering
   \includegraphics[width=\linewidth]{assets/controlled-modular-addition.png}
   \caption{\em
-    Controlled modular addition.
-    The circuit as a whole only needs a dirty bit if no control qubits are available to be borrowed by the uncontrolled pivot-flip operations.
+    Controlled modular addition construction based on pivot-flips.
+    Uses $2-c$ dirty ancilla, $O(c + n \lg n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
   }
   \label{fig:controlled-modular-add}
 \end{figure}
@@ -212,7 +221,8 @@ See figure \ref{fig:controlled-modular-offset}.
   \centering
   \includegraphics[width=\linewidth]{assets/controlled-modular-offset.png}
   \caption{\em
-    Controlled modular offset.
+    Controlled modular offset construction based on pivot-flips.
+    Uses $2$ dirty ancilla, $O(c + n \lg n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
   }
   \label{fig:controlled-modular-offset}
 \end{figure}
@@ -220,7 +230,7 @@ See figure \ref{fig:controlled-modular-offset}.
 
 \subsection{Pivot-Flips} \label{sec:pivot-flips}
 
-We implemented both modular doubling and modular offset/addition in terms of a non-standard operation we call ``pivot-flips".
+We implemented both modular doubling and modular offset/addition in terms of a non-standard operation we call a ``pivot-flip".
 A pivot-flip is an operation that reverses the order of states less than a given pivot value, without affecting other states.
 For example, a pivot-flip with the pivot equal to 4 would swap $|0\rangle$ and $|3\rangle$, swap $|1\rangle$ and $|2\rangle$, and leave all other states untouched.
 
@@ -229,21 +239,22 @@ The exact permutation performed by a pivot-flip with pivot equal to $A$ is:
 $$\text{PivotFlip}_A = \sum_{i=0}^{A-1} |A-i-1\rangle \langle i| + \sum_{i=A}^{N-1} |i\rangle \langle i|$$
 
 To perform a pivot-flip efficiently, we use the fact that $x \rightarrow \lnot(x - A)$ nearly does what is required: it flips the range below $A$ but unfortunately also flips the range above-and-including $A$.
-However, because $x \rightarrow \lnot(x - A)$ is its own inverse, the operation can be ``toggle-controlled'': unless a controlling qubit is toggled between two applications of the operation, it will have no effect or undo itself.
-Also, because the operation doesn't change whether a given value is below the pivot, the controlling qubit can be toggled by a comparison of the {\em target} against the pivot $A$.
-See figure \ref{fig:controlled-pivot-flip} for the construction.
-For states that are less than the pivot $A$, the comparison is true, the ancilla is toggled both times, and exactly one of the controlled subtract-and-inverts will fire.
+However, because $x \rightarrow \lnot(x - A)$ is its own inverse, the operation can be ``toggle-controlled'', where the operation undoes itself unless a controlling qubit is toggled between two applications.
+Also, because the operation doesn't change whether a given value is below the pivot, the controlling qubit can be toggled by a comparison of the target against the pivot $A$ even though the target is being operated on.
+
+See figure \ref{fig:controlled-pivot-flip} for our pivot-flip construction.
+For states that are less than the pivot $A$, the comparison against the pivot keeps toggling the ancilla and exactly one of the controlled subtract-and-inverts will fire.
 For other states, the ancilla does not change and so the subtract-and-inverse happens either no times or two times (undoing itself) for a net effect of no effect.
 
 Note that, depending on whether or not the pivot is a compile-time constant or another qubit register, different subtraction constructions are used when reducing further.
-This distinction matters because the constant-offset case uses $O(n \lg n)$ gates \cite{haner2016} instead of the $\Theta(n)$ gates used by enregistered addition \cite{takahashi2005}.
-Also, the constant-offset case requires an extra dirty bit (unless quantum operations are used, e.g. see figure \ref{fig:bootstrap-ancilla}).
+This distinction matters because the constant-offset construction uses $O(n \lg n)$ gates \cite{haner2016} instead of the $\Theta(n)$ gates used by enregistered addition \cite{takahashi2005}.
 
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{assets/controlled-pivot-flip.png}
   \caption{\em
     Controlled pivot-flip circuit with an enregistered pivot.
+    Uses $2$ dirty ancilla, $O(c + n \lg n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
   }
   \label{fig:controlled-pivot-flip}
 \end{figure}
@@ -253,20 +264,9 @@ Also, the constant-offset case requires an extra dirty bit (unless quantum opera
   \includegraphics[width=\linewidth]{assets/controlled-const-pivot-flip.png}
   \caption{\em
     Controlled pivot-flip circuit with a constant pivot.
-    The extra dirty ancilla, compared to the enregistered case, comes from the controlled-offset construction.
+    Uses $2$ dirty ancilla, $O(c + n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
   }
   \label{fig:controlled-pivot-flip}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \includegraphics[width=\linewidth]{assets/controlled-offset.png}
-  \caption{\em
-      Offset circuit from \cite{haner2016}, but modified to include controls.
-      Uses $O(n \lg n)$ gates and $O(n)$ depth (by overlapping the recursive cases).
-      Note that, if $c$ is not $O(1)$, the recursion introduces additional non-linear costs.
-  }
-  \label{fig:controlled-offset}
 \end{figure}
 
 
@@ -274,41 +274,15 @@ Also, the constant-offset case requires an extra dirty bit (unless quantum opera
 
 Comparison operations toggle a target bit based on the relationship between two input registers.
 We implement comparisons as in \cite{takahashi2005}, using an addition followed by a subtraction that is slightly smaller to clear all changes except an overflow signal into the target.
-See figures \ref{fig:comparison-less} and \ref{fig:comparison-less-const}.
-
-To perform a $\leq$ instead of a $<$, simply add/subtract $A+1$ instead of $A$.
-(Apply the extra increment/decrement to the target register, not the input register, since incrementing the input register may wrap it to zero.)
-
-Beware that, in these constructions, if the $B$ register is smaller than the $A$ register, the high bits of $A$ are lost and the construction breaks.
-To fix the problem, swap the roles of A and B (i.e. subtract out of A instead) and use the opposite comparison.
-Alternatively, any operations generated by the subtraction or decrement gates that toggle the target bit can be controlled by the high bits of $A$ all being off and otherwise (if any of the high bits are on) concluding $A>B$ and toggling the result bit as appropriate for the comparison being implemented.
-
-\begin{figure}
-  \centering
-  \includegraphics[width=\linewidth]{assets/comparison-less.png}
-  \caption{\em Toggling a target bit if one register is less than another, without using ancilla.}
-  \label{fig:comparison-less}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \includegraphics[width=\linewidth]{assets/comparison-less-const.png}
-  \caption{\em Toggling a target bit if a register is less then a constant, using a dirty ancilla and $O(n \lg n)$ gates.}
-  \label{fig:comparison-less-const}
-\end{figure}
+For comparisons against another register this uses $1$ dirty ancilla (if controlled, otherwise no ancilla), $O(c + n)$ gates, and $O(c + n)$ depth.
+For comparisons against a constant, the number of gates increases to $O(c + n \lg n)$ and the dirty ancilla is always required.
 
 
 \subsection{Addition / Offset}
 
-In \cite{van2004}, a reversible adder with $O(N)$ depth and $O(N)$ size, requiring a single clean ancilla, is described.
-If the ancilla is not initialized in the off state, the target register ends up storing $a+b+1$ instead of $a+b$.
-For clarity, we review how to elide the ancilla.
-
-The need for the ancilla to be clean can be fixed by inverting (bitwise-NOT-ing) the input and target registers before and after the addition when the ancilla is on.
-Because $\lnot x = -x-1$, and the registers are the same size, temporarily inverting the target effectively turns the addition into a subtraction.
-Temporarily inverting the input effectively turns the subtraction back into an addition, but also introduces an extra shift by -1, cancelling out the +1 error.
-
-Once the ancilla can be dirty, the MSB of the input register can play the role of the ancilla, as in \cite{takahashi2005} and shown in figure \ref{fig:inlineadder}.
+\cite{takahashi2005} provides a reversible adder circuit that uses $O(n)$ gates, $O(n)$ depth, and no ancilla.
+We show an equivalent circuit in figure \ref{fig:inlineadder}.
+Note that the construction uses the input register as workspace, so it breaks when the input is a compile-time constant or when the target register is larger than the input register.
 
 \begin{figure}
   \centering
@@ -319,44 +293,53 @@ Once the ancilla can be dirty, the MSB of the input register can play the role o
   \label{fig:inlineadder}
 \end{figure}
 
-\begin{figure}
-  \centering
-  \includegraphics[width=\linewidth]{assets/controlled-addition.png}
-  \caption{\em
-  	Reducing controlled addition to uncontrolled addition.
-  	Uses $O(N + C)$ gates and depth.
-  }
-  \label{fig:controlled-addition}
-\end{figure}
+When the value to be added into a register is a compile-time constant (i.e. when applying an offset gate), we use the construction from \cite{haner2016}.
+Their offset circuit, shown in figure \ref{fig:offset}, uses $O(n \lg n)$ gates, $O(n)$ depth, and a dirty ancilla.
 
-Because this adder construction uses the input register as workspace, it breaks when the input and target registers differ in size.
-When the input register is larger, the high bits of the input register can simply be ignored.
-But, when the target register is larger, there is insufficient workspace and also the logical-negation trick that allowed the ancilla to be dirty breaks.
-
-To work around the target register being larger, three tweaks are needed.
-Each uses a controlled increment or decrement gate, which will be described in the next subsection.
-(Note that, to avoid cyclic dependencies, the increment and decrement constructions will only use the same-register-size adder.)
-
-First, the carry signal must be forwarded into the high part of the target register with a controlled increment instead of with a CNOT.
-Second, to free the MSB of the input register for use as the carry signal, we add it into the target ahead of time with a controlled increment.
-Finally, when the MSB is on instead of off its role as carry signal causes an extra increment of the target.
+When the target register is larger than the input register, three tweaks based on increment/decrement gates can be used (instead of increasing the asymptotic costs).
+(Note that, to avoid cyclic dependencies, the increment and decrement constructions described in the next subsection will only use the same-register-size adder.)
+First, the carry signal is forwarded into the high part of the target register with a controlled increment instead of with a CNOT.
+Second, to free the MSB of the input register for use as a dirty ancilla holding the carry signal, we add it into the target ahead of time with a controlled increment.
+Finally, when the MSB is on its role as carry signal causes an extra increment of the target.
 This extra increment is cancelled with a controlled decrement.
 See the circuit diagram in figure \ref{fig:inline-adder-into-large}.
+
+To control addition gates, and offset gates, we do an uncontrolled addition followed by an uncontrolled subtraction bordered by NOT gates that fire when the controls are satisfied.
+When the NOT gates don't fire, the subtraction cancels the addition.
+When the NOT gates do fire, the subtraction is inverted into an addition and $2 \cdot a$ is added to the target.
+To add $a$ instead of $2 \cdot a$ into the target, we temporarily prepend a dirty bit onto the target register.
+See \ref{fig:controlled-addition}.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{assets/offset.png}
+  \caption{\em
+      Offset circuit from \cite{haner2016}.
+      Uses $1$ dirty ancilla, $O(n \lg n)$ gates, and $O(n)$ depth (by overlapping the recursive cases).
+  }
+  \label{fig:offset}
+\end{figure}
 
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{assets/inline-adder-into-large.png}
   \caption{\em
       Adder with target larger than source, using no ancilla.
-      Uses $O(N)$ gates and depth.
+      Uses $O(n)$ gates and depth.
       The increment and decrement gates all have at least one free wire to borrow as a dirty ancilla.}
   \label{fig:inline-adder-into-large}
 \end{figure}
 
-Another problem with using the input register as workspace appears when adding a constant offset into a target: there {\em isn't} an input register.
-We use the construction from \cite{haner2016}, which works for constant offsets but increases the gate cost from $\Theta(n)$ to $\Theta(n \lg n)$ and also requires a dirty ancilla instead of no ancilla (unless using quantum operations).
-See figure \ref{fig:controlled-offset}.
-We note that our paper would have significantly fewer diagrams if offset and addition didn't have differing costs.
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{assets/controlled-addition.png}
+  \caption{\em
+  	Reducing controlled addition to uncontrolled addition.
+  	Uses $O(c + n)$ gates, $O(c + n)$ depth, and a dirty ancilla.
+  	When applied to offset gates, uses $O(c + n \lg n)$ gates, $O(n + c)$ depth, and two dirty ancilla.
+  }
+  \label{fig:controlled-addition}
+\end{figure}
 
 
 \subsection{Increment}
@@ -381,27 +364,23 @@ When the condition isn't satisfied, the addition and subtraction will cancel eac
 When the condition is satisfied, the addition will be inverted into a subtraction, and both the subtraction and addition-turned-subtraction will fire, subtracting the input register from the target register twice.
 However, because we are conditioning on the input bits all being on, we know the input must be -1.
 Therefore the target was incremented by 2.
-To halve the +2 into a +1, prepend a dirty least-significant-bit onto the target register as shown in \ref{fig:increment-odd}.
+To halve the +2 into a +1, prepend a dirty least-significant-bit onto the target register.
 
-Because the adder/subtracter construction used by the incrementer in figure \ref{fig:increment-odd} requires the target and source registers to be the same size, the incrementer construction described so far only works on odd-sized registers.
-For even-sized registers, another minor variation on the conditionally-invert-addition-into-subtraction-with-logical-negation technique is used.
-That construction is shown in figure \ref{fig:increment-even}.
-
-Increment gates can be efficiently controlled by using another invert-input-and-output trick.
-See figures \ref{fig:controlled-increment-odd} and \ref{fig:controlled-increment-even}.
+Note that, to avoid a cyclic dependency, we must require that the additions and subtractions use input and target registers of the same size.
+So the construction described in the previous paragraph only works for odd-sized registers.
+For even-sized registers, we simply handle the LSB separately.
+Also, we support contorls with another conditional-inversion trick.
+See figure \ref{fig:controlled-increment-odd}.
 
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{assets/controlled-increment-odd.png}
-  \caption{\em Odd-sized $O(N)$ controlled increment with 1 dirty ancilla.}
+  \caption{\em
+    Odd-sized controlled increment.
+    For the even-sized case, separate the LSB from the rest of the register, increment the rest of the register using the LSB as an extra control, then toggle the LSB.
+    Uses $O(c+n)$ gates, $O(c+n)$ depth, and 1 dirty ancilla.
+  }
   \label{fig:controlled-increment-odd}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \includegraphics[width=\linewidth]{assets/controlled-increment-even.png}
-  \caption{\em Even-sized $O(N)$ controlled increment with 1 dirty ancilla.}
-  \label{fig:controlled-increment-even}
 \end{figure}
 
 \begin{figure}
@@ -417,14 +396,15 @@ See figures \ref{fig:controlled-increment-odd} and \ref{fig:controlled-increment
 
 \subsection{Bit Swaps, Rotations, and Reversals}
 
-Bit permuting operations are easy to overlook in circuits, because they can be emulated by re-labelling qubits.
-But some of our circuit diagrams have used controlled bit permutations, requiring actual operations, so we provide the constructions for completeness.
+Bit permuting operations can usually be emulated by re-labelling qubits, so they are easy to overlook in circuits.
+But some of our circuit diagrams have used controlled bit rotations, requiring actual operations, so we provide the constructions for completeness.
 
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{assets/controlled-bit-rotate.png}
   \caption{\em
-    A controlled bit rotation / bit swap is three $O(N+C)$ controlled bit-reverses.
+    A controlled bit rotation / bit swap is three controlled bit-reverses.
+    Uses no ancilla, $O(n+c)$ gates, and $O(n+c)$ depth.
   }
   \label{fig:dependencies}
 \end{figure}
@@ -433,9 +413,10 @@ But some of our circuit diagrams have used controlled bit permutations, requirin
   \centering
   \includegraphics[width=\linewidth]{assets/controlled-reverse.png}
   \caption{\em
-    An inline controlled bit order reversal using $O(N + C)$ gates.
-    Each XOR operation is a series of CNOTs (note that the inputs have opposite endian-ness to the outputs).
+    An inline controlled bit order reversal.
+    Each XOR operation is a series of independent CNOTs (note that the inputs have opposite endian-ness to the outputs).
     For reversals on an even number of bits, swap the center two bits beforehand then use one of them as the center workspace bit from this construction.
+    Uses no ancilla, $O(c + n)$ gates, and $O(c + n)$ depth.
   }
   \label{fig:dependencies}
 \end{figure}
@@ -444,28 +425,29 @@ But some of our circuit diagrams have used controlled bit permutations, requirin
 \subsection{Multi-Nots}
 
 Several of our constructions have used CNOTs with many controls and many targets.
-To avoid paying the overhead of $c$ controls for every target, we use one big CNOT to toggle-control all the others. [[[ FIGURE ]]]
+To avoid paying the overhead of $c$ controls for every target, we use one big CNOT to toggle-control all the others.
 We then use a dirty ancilla (i.e. one of the other targets) to efficiently reduce the big CNOT into Toffolis.
+
 
 \section{Overview and Improvements} \label{sec:costs}
 
 In figure \ref{fig:dependencies} we show a dependency graph of the constructions discussed in this paper.
-The total cost of period-finding, using this construction, is $O(n^3 \lg n)$ gates and $O(n^3)$ depth.
+The total cost of period-finding, using the full construction, is $O(n^3 \lg n)$ gates and $O(n^3)$ depth.
 We perform $O(n)$ modular multiplications, each of which uses $O(n)$ modular additions and offsets, each of which uses $O(n \lg n)$ gates \cite{haner2016} and $O(n)$ depth.
 
-We tested individual constructions in Quirk [[[ https://github.com/Strilanc/Quirk ]]] and the full construction down to Toffoli gates in ProjectQ [[[ https://github.com/ProjectQ-Framework/ProjectQ ]]] [[[ link to code ]]].
+We tested individual constructions in \href{https://github.com/Strilanc/Quirk}{Quirk} and the full construction down to Toffoli gates in \href{https://github.com/ProjectQ-Framework/ProjectQ}{ProjectQ} \cite{projq2016}. [[[ insert link to code ]]] [[[ maybe make a plot of gate counts vs size? ]]] [[[ definitely need another constant-factor joke ]]]
 
 Our main improvements over previous constructions are 1) the use of pivot-flips for modular addition, 2) the use of bimultiplication for modular multiplication, and 3) the $O(n)$ incrementer requiring only a single dirty ancilla.
 
 Previous modular addition constructions worked by temporarily storing an is-wraparound-needed comparison in a clean ancilla \cite{takahashi2006, haner2016}.
-Pivot flips also require an ancilla (two, actually), but the ancilla can be dirty and, in the context of period-finding, there's always qubits available to borrow whenever a pivot-flip is needed.
+Pivot flips also require ancilla (two, actually), but the ancilla can be dirty and, in the context of period-finding, there's always qubits available to borrow whenever a pivot-flip is needed.
 This improvement saves a qubit, reducing the total number of qubits required for period finding from $2n+2$ to $2n+1$.
 
 Previous modular multiplication constructions required a clean ancilla register \cite{haner2016}, where any garbage in the ancilla register would have infected the target register and trashed it.
 We deal with the trash with an extra multiply-accumulate per modular multiplication, and cancel the overall effects on the ancilla register with a clean-up multiplication informed by measuring the main register at the end of the circuit.
-This improvement allows $n-1$ of the qubits in the ancilla register  to be dirty (only the MSB must be zero; to ensure the register's value is in range).
+This improvement allows $n-1$ of the qubits in the ancilla register to be dirty (only the MSB must be zero; to ensure the register's value is in range).
 
-Previous published incrementers (not counting a rough unpublished version of our construction \cite{gidney2015} being cited by \cite{haner2016}) required either $O(n^2)$ gates or $O(n)$ ancilla \cite{draper2000, barenco1995}.
+Previous published incrementers (not counting an unpublished version of our construction \cite{gidney2015} cited by \cite{haner2016}) required either $O(n^2)$ gates or $O(n)$ ancilla \cite{draper2000, barenco1995}.
 Our classical incrementer constructions use $O(n)$ gates and a single dirty ancilla.
 Note that, for classical reversible computation, 1 dirty ancilla is optimal.
 The parity of the permutation performed by an increment operation is odd, but the parity of the permutation performed by any classical gate that doesn't cover the entire circuit is even.
@@ -475,8 +457,8 @@ With quantum operations, we achieve zero ancilla and $O(n)$ gates (see figure \r
   \centering
   \includegraphics[height=17.3cm]{assets/dependencies.png}
   \caption{\em
-    Graph of non-trivial dependencies between constructions, from period finding to fixed-size gates.
-    Edges are labelled by an upper bound on how many times the target is used by the source.
+    Meta-figure showing simplified dependencies between constructions, from period finding to constant-size gates.
+    Edge labels indicate which constructions use their dependencies more than a constant number of times.
   }
   \label{fig:dependencies}
 \end{figure}
@@ -488,58 +470,5 @@ We presented Toffoli-based arithmetic circuits that reduce the smallest known nu
 
 \bibliographystyle{plain}
 \bibliography{citations}
-
-\section{Temporary Test Circuit Links}
-
-Convenience links for myself when checking that things work.
-
-\href
-{http://algassert.com/quirk#circuit=%7B%22cols%22%3A%5B%5B%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B%22Swap%22%2C1%2C1%2C1%2C%22Swap%22%2C%22%E2%80%A2%22%5D%2C%5B1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C%22Swap%22%2C1%2C1%2C%22Swap%22%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C1%2C%22Swap%22%2C1%2C%22Swap%22%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C1%2C1%2C%22Swap%22%2C%22Swap%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C1%2C1%2C%22Swap%22%2C%22Swap%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C1%2C%22Swap%22%2C1%2C%22Swap%22%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C%22X%22%5D%2C%5B1%2C%22Swap%22%2C1%2C1%2C%22Swap%22%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C%22X%22%5D%2C%5B%22Swap%22%2C1%2C1%2C1%2C%22Swap%22%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C%22X%22%5D%2C%5B%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%5D%7D}
-{5+5-bit inline adder}
-(or \href
-{http://algassert.com/quirk#circuit=%7B%22cols%22%3A%5B%5B%22Counting10%22%5D%2C%5B%22QFT7%22%5D%2C%5B1%2C1%2C1%2C%22QFT7%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B%22Swap%22%2C1%2C1%2C1%2C%22Swap%22%2C%22%E2%80%A2%22%5D%2C%5B1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C%22Swap%22%2C1%2C1%2C%22Swap%22%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C1%2C%22Swap%22%2C1%2C%22Swap%22%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C1%2C1%2C%22Swap%22%2C%22Swap%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C1%2C1%2C%22Swap%22%2C%22Swap%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C1%2C%22Swap%22%2C1%2C%22Swap%22%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C%22X%22%5D%2C%5B1%2C%22Swap%22%2C1%2C1%2C%22Swap%22%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C%22X%22%5D%2C%5B%22Swap%22%2C1%2C1%2C1%2C%22Swap%22%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C%22X%22%5D%2C%5B%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22inputA5%22%2C1%2C1%2C1%2C1%2C%22%2B%3DA5%22%5D%2C%5B1%2C1%2C1%2C%22QFT%E2%80%A07%22%5D%2C%5B%22QFT%E2%80%A07%22%5D%2C%5B%22Uncounting10%22%5D%5D%7D}
-{with test harness})
-
-\href
-{http://algassert.com/quirk#circuit=%7B%22cols%22%3A%5B%5B%22inputA4%22%2C1%2C1%2C1%2C%22-%3DA4%22%5D%2C%5B%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22-%3DA4%22%5D%2C%5B%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%5D%7D}
-{4-bit incrementer w/ 4 dirty}
-
-\href
-{http://algorithmicassertions.com/quirk#circuit=%7B%22cols%22%3A%5B%5B1%2C1%2C1%2C1%2C1%2C%22%3C%3C4%22%5D%2C%5B1%2C%22inputA4%22%2C1%2C1%2C1%2C%22-%3DA4%22%5D%2C%5B%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B1%2C%22inputA4%22%2C1%2C1%2C1%2C%22%2B%3DA4%22%5D%2C%5B%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B1%2C%22-%3DA4%22%2C1%2C1%2C1%2C%22inputA4%22%5D%2C%5B%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B1%2C%22%2B%3DA4%22%2C1%2C1%2C1%2C%22inputA4%22%5D%2C%5B%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B%22X%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C%22%3E%3E4%22%5D%5D%7D}
-{8-bit incrementer w/ 1 dirty}
-(or \href
-{http://algorithmicassertions.com/quirk#circuit=%7B%22cols%22%3A%5B%5B%22Counting9%22%5D%2C%5B%22QFT6%22%5D%2C%5B1%2C1%2C1%2C%22QFT6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C%22%3C%3C4%22%5D%2C%5B1%2C%22inputA4%22%2C1%2C1%2C1%2C%22-%3DA4%22%5D%2C%5B%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B1%2C%22inputA4%22%2C1%2C1%2C1%2C%22%2B%3DA4%22%5D%2C%5B%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B1%2C%22-%3DA4%22%2C1%2C1%2C1%2C%22inputA4%22%5D%2C%5B%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B1%2C%22%2B%3DA4%22%2C1%2C1%2C1%2C%22inputA4%22%5D%2C%5B%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B%22X%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C%22%3E%3E4%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22dec8%22%5D%2C%5B1%2C1%2C1%2C%22QFT%E2%80%A06%22%5D%2C%5B%22QFT%E2%80%A06%22%5D%2C%5B%22Uncounting9%22%5D%5D%7D}
-{with test harness})
-
-\href
-{http://algorithmicassertions.com/quirk#circuit=%7B%22cols%22%3A%5B%5B1%2C1%2C1%2C1%2C1%2C%22%3C%3C5%22%5D%2C%5B%22inputA5%22%2C1%2C1%2C1%2C1%2C%22-%3DA5%22%5D%2C%5B%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B%22inputA5%22%2C1%2C1%2C1%2C1%2C%22%2B%3DA5%22%5D%2C%5B%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B%22-%3DA5%22%2C1%2C1%2C1%2C1%2C%22inputA5%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B%22-%3DA5%22%2C1%2C1%2C1%2C1%2C%22inputA5%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C%22%3E%3E5%22%5D%5D%7D}
-{9-bit incrementer w/ 1 dirty}
-(or \href
-{http://algorithmicassertions.com/quirk#circuit=%7B%22cols%22%3A%5B%5B%22Counting10%22%5D%2C%5B%22QFT7%22%5D%2C%5B1%2C1%2C1%2C%22QFT7%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C%22%3C%3C5%22%5D%2C%5B%22inputA5%22%2C1%2C1%2C1%2C1%2C%22-%3DA5%22%5D%2C%5B%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B%22inputA5%22%2C1%2C1%2C1%2C1%2C%22%2B%3DA5%22%5D%2C%5B%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B%22-%3DA5%22%2C1%2C1%2C1%2C1%2C%22inputA5%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B%22-%3DA5%22%2C1%2C1%2C1%2C1%2C%22inputA5%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C%22%3E%3E5%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22dec9%22%5D%2C%5B1%2C1%2C1%2C%22QFT%E2%80%A07%22%5D%2C%5B%22QFT%E2%80%A07%22%5D%2C%5B%22Uncounting10%22%5D%5D%7D}
-{with test harness})
-
-\href
-{http://algorithmicassertions.com/quirk#circuit=%7B%22cols%22%3A%5B%5B%22Z%5E%E2%85%9F%E2%82%81%E2%82%86%22%2C%22Z%5E%E2%85%9F%E2%82%81%E2%82%86%22%2C%22Z%5E%E2%85%9B%22%2C%22Z%5E%C2%BC%22%2C%22H%22%5D%2C%5B%22%E2%80%A2%22%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C1%2C1%2C1%2C%22Z%5E-%C2%BC%22%5D%2C%5B1%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22X%22%5D%2C%5B1%2C1%2C1%2C1%2C%22Z%5E%C2%BC%22%5D%2C%5B%22%E2%80%A2%22%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C1%2C1%2C1%2C%22Z%5E-%C2%BC%22%5D%2C%5B1%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22%E2%80%A2%22%2C%22X%22%5D%2C%5B%22inc4%22%2C1%2C1%2C1%2C%22Z%5E%C2%BC%22%5D%2C%5B1%2C%22Z%5E-%E2%85%9F%E2%82%81%E2%82%86%22%2C%22Z%5E-%E2%85%9B%22%2C%22Z%5E-%C2%BC%22%2C%22H%22%5D%5D%7D}
-{Quantum incrementer ancilla bootstrap}
-
-NOTE: have to open these next ones against local version, because online version doesn't have the comparison gates
-
-\href
-{http://algassert.com/quirk#circuit=%7B%22cols%22%3A%5B%5B%22inputA4%22%2C1%2C1%2C1%2C%22inputB4%22%2C1%2C1%2C1%2C%22%5EA%3EB%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22-%3DA4%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22%E2%80%A2%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22inputB4%22%2C1%2C1%2C1%2C%22%5EA%3EB%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22-%3DA4%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22%E2%80%A2%22%5D%5D%7D}
-{4+4-Bit $<$ PivotFlip}
-(or \href
-{http://algassert.com/quirk#circuit=%7B%22cols%22%3A%5B%5B1%2C1%2C1%2C1%2C%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%5D%2C%5B%22Counting4%22%2C1%2C1%2C1%2C%22inputA4%22%2C1%2C1%2C1%2C%22%2B%3DA4%22%2C1%2C1%2C1%2C%22X%5Et%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22%3C%3C5%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22inputB4%22%2C1%2C1%2C1%2C%22%5EA%3EB%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22-%3DA4%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22%E2%80%A2%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22inputB4%22%2C1%2C1%2C1%2C%22%5EA%3EB%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22-%3DA4%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22%E2%80%A2%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22%3E%3E5%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22X%5E-t%22%5D%2C%5B%22Chance4%22%2C1%2C1%2C1%2C%22Amps8%22%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22Chance%22%5D%5D%7D}
-{with test harness})
-
-\href
-{http://algassert.com/quirk#circuit=%7B%22cols%22%3A%5B%5B%22inputA4%22%2C1%2C1%2C1%2C%22inputB4%22%2C1%2C1%2C1%2C%22%5EA%3E%3DB%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22-%3DA4%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22dec4%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22%E2%80%A2%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22inputB4%22%2C1%2C1%2C1%2C%22%5EA%3E%3DB%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22-%3DA4%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22dec4%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22%E2%80%A2%22%5D%5D%7D}
-{4+4-Bit $\leq$ PivotFlip}
-(or \href
-{http://algassert.com/quirk#circuit=%7B%22cols%22%3A%5B%5B1%2C1%2C1%2C1%2C%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%5D%2C%5B%22Counting4%22%2C1%2C1%2C1%2C%22inputA4%22%2C1%2C1%2C1%2C%22%2B%3DA4%22%2C1%2C1%2C1%2C%22X%5Et%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22%3C%3C5%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22inputB4%22%2C1%2C1%2C1%2C%22%5EA%3E%3DB%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22-%3DA4%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22dec4%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22%E2%80%A2%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22inputB4%22%2C1%2C1%2C1%2C%22%5EA%3E%3DB%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22-%3DA4%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22dec4%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22%E2%80%A2%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22%3E%3E5%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22X%5E-t%22%5D%2C%5B%22Chance4%22%2C1%2C1%2C1%2C%22Amps8%22%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22Chance%22%5D%5D%7D}
-{with test harness})
-
-\href
-{http://algassert.com/quirk#circuit=%7B%22cols%22%3A%5B%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22inc4%22%5D%2C%5B%22X%22%2C1%2C1%2C%22X%22%2C%22Counting4%22%2C1%2C1%2C1%2C%22QFT4%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22inputA4%22%2C1%2C1%2C1%2C%22%2B%3DA4%22%5D%2C%5B%22Chance4%22%2C1%2C1%2C1%2C%22Chance4%22%2C1%2C1%2C1%2C%22Chance4%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22%2B%3DA4%22%5D%2C%5B1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B1%2C1%2C1%2C1%2C%22inc4%22%5D%2C%5B1%2C1%2C1%2C1%2C%22inputA4%22%2C1%2C1%2C1%2C%22Flip%3CA4%22%5D%2C%5B1%2C1%2C1%2C1%2C%22dec4%22%5D%2C%5B1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22Flip%3CA4%22%5D%2C%5B%22inputA4%22%2C1%2C1%2C1%2C%22%2B%3DA4%22%5D%2C%5B1%2C1%2C1%2C1%2C%22inputA4%22%2C1%2C1%2C1%2C%22Flip%3CA4%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22Chance4%22%2C1%2C1%2C1%2C%22Chance4%22%2C1%2C1%2C1%2C%22Amps8%22%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22%7C0%E2%9F%A9%E2%9F%A80%7C%22%5D%2C%5B%22inputB4%22%2C1%2C1%2C1%2C%22inputA4%22%2C1%2C1%2C1%2C%22%5EA%3E%3DB%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22Chance%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22~a82g%22%5D%5D%2C%22gates%22%3A%5B%7B%22id%22%3A%22~a82g%22%2C%22name%22%3A%22IGNORE%22%2C%22matrix%22%3A%22%7B%7B1%2C0%7D%2C%7B0%2C1%7D%7D%22%7D%5D%7D}
-{Modular Addition with test Harness}
 
 \end{document}

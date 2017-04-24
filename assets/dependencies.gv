@@ -2,49 +2,51 @@ digraph G {
   node [shape=box]
   
   PeriodFinding [label="Period Finding\nfig 1, 2, 3"]
-  ModularPairedMultiply [label="Paired Modular Multiply\n×K, ×K⁻¹ (mod R)\nfig 4"]
-  ModularMultiplyAccumulate [label="Modular Multiply-Accumulate\n+AK (mod R)\nfig 5"]
-  PivotFlip [label="PivotFlip\nfig 6, 7"]
-  ModularDouble [label="Modular Double\n×2 (mod R)\nfig 9"]
-  ModularAdd [label="Modular Add/Offset\n+A (mod R)\nfig 7, 8, 10, 11, 12, 13, 14"]
-  Compare [label="Compare\n⊕A<B\nfig 15, 16"]
-  Add [label="Addition / Offset\n+A\nfig 18"]
-  Increment [label="Increment\n+1\nfig 19, 20, 21, 22, 23, 24"]
-  SameSizeAdd [label="Same-Size Addition\n+A\nfig 17"]
+  ModularPairedMultiply [label="Modular BiMultiply\n×K, ×-K⁻¹ (mod R)\nfig 4"]
+  ModularMultiplyAccumulate [label="Modular Scaled-Accumulate\n+AK (mod R)\nfig 5"]
+  ModularDouble [label="Modular Double\n×2 (mod R)\nfig 6"]
+  ModularAdd [label="Modular Add/Offset\n+A (mod R)\nfig 7, 8, 9"]
+  PivotFlip [label="PivotFlip\nfig 10, 11"]
+  Compare [label="Compare\n⊕A<B"]
+  Add [label="Addition / Offset\n+A\nfig 13, 14, 15"]
+  Increment [label="Increment\n+1\nfig 16, 17"]
+  SameSizeAdd [label="Same-Size Addition\n+A\nfig 12"]
+  PermuteBits [label="Rotate/Reverse Bits\nfig 19, 20"]
   Leaf [label="NOT / CNOT / CCNOT"]
 
-  edge [label="O(n)"]
+  edge [label="n"]
   PeriodFinding -> ModularPairedMultiply
 
-  edge [label="3"]
-  ModularPairedMultiply -> ModularMultiplyAccumulate
+  edge [label=""]
+  ModularPairedMultiply -> ModularMultiplyAccumulate, PermuteBits
 
-  edge [label="2n"]
+  edge [label="n"]
   ModularMultiplyAccumulate -> ModularDouble, ModularAdd
 
-  edge [label="1"]
-  ModularDouble -> PivotFlip, Add
+  edge [label=""]
+  ModularDouble -> PivotFlip, Add, PermuteBits
 
-  edge [label="2"]
-  ModularAdd -> Add
-  edge [label="3"]
-  ModularAdd -> PivotFlip
+  edge [label=""]
+  ModularAdd -> Add, PivotFlip
 
-  edge [label="1"]
+  edge [label=""]
   PivotFlip -> Compare, Add
 
-  edge [label="2"]
+  edge [label=""]
   Compare -> Add
 
-  edge [label="3"]
+  edge [label=""]
   Add -> Increment
   edge [label="lg(n) offset size overhead"]
   Add -> Add
 
-  edge [label="4"]
+  edge [label=""]
   Increment -> SameSizeAdd
 
   edge [label="n"]
   SameSizeAdd -> Leaf
+
+  edge [label="n"]
+  PermuteBits -> Leaf
 }
 
