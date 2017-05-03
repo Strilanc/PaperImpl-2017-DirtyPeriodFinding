@@ -10,16 +10,17 @@ from projectq.cengines import (DummyEngine,
                                AutoReplacer,
                                DecompositionRuleSet)
 from projectq.setups.decompositions import swap2cnot
-from ._test_util import (
+
+from dirty_period_finding.decompositions import multi_not_rules
+from dirty_period_finding.decompositions import reverse_bits_rules
+from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.extensions import SwapGate
+from dirty_period_finding.gates import ReverseBits
+from .._test_util import (
     bit_to_state_permutation,
     check_permutation_circuit,
     fuzz_permutation_circuit,
 )
-from ..decompositions import multi_not_rules
-from ..decompositions import reverse_bits_rules
-from ..extensions import SwapGate
-from ..extensions import LimitedCapabilityEngine
-from ..gates import ReverseBits
 
 
 def test_toffoli_size_of_reverse():

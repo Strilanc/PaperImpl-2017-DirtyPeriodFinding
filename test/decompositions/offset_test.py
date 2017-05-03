@@ -6,16 +6,15 @@ import itertools
 import random
 
 from projectq.cengines import AutoReplacer, DecompositionRuleSet
-from ._test_util import (
-    fuzz_permutation_circuit, check_permutation_circuit
-)
-from ..decompositions import offset_rules, multi_not_rules
-from ..decompositions.offset_rules import (
+
+from dirty_period_finding.decompositions import offset_rules, multi_not_rules
+from dirty_period_finding.decompositions.offset_rules import (
     do_predict_carry_signals,
     do_predict_overflow,
 )
-from ..extensions import LimitedCapabilityEngine
-from ..gates import OffsetGate
+from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.gates import OffsetGate
+from .._test_util import fuzz_permutation_circuit, check_permutation_circuit
 
 
 def _carry_signals(x, y):

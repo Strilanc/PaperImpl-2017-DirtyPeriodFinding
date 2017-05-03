@@ -10,18 +10,17 @@ from projectq.cengines import (AutoReplacer,
                                DecompositionRuleSet,
                                DummyEngine)
 from projectq.setups.decompositions import swap2cnot
-from ._test_util import (
-    fuzz_permutation_circuit, check_permutation_circuit
-)
-from ..decompositions import (
+
+from dirty_period_finding.decompositions import (
     pivot_flip_rules,
     addition_rules,
     offset_rules,
     increment_rules,
     multi_not_rules
 )
-from ..extensions import LimitedCapabilityEngine
-from ..gates import PivotFlip, PivotFlipGate, ConstPivotFlipGate
+from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.gates import PivotFlip, PivotFlipGate, ConstPivotFlipGate
+from .._test_util import fuzz_permutation_circuit, check_permutation_circuit
 
 
 def test_toffoli_size_of_pivot_flip():

@@ -11,17 +11,24 @@ from projectq.cengines import (DummyEngine,
                                DecompositionRuleSet)
 from projectq.setups.decompositions import swap2cnot
 from projectq.types import Qureg
-from ._test_util import fuzz_permutation_circuit, check_permutation_circuit
-from ..decompositions import (
+
+from dirty_period_finding.decompositions import (
     multi_not_rules,
     addition_rules,
     increment_rules
 )
-from ..decompositions.addition_rules import (
+from dirty_period_finding.decompositions.addition_rules import (
     do_addition_with_same_size_and_no_controls
 )
-from ..extensions import LimitedCapabilityEngine, Swap, X
-from ..gates import Add, Subtract, MultiNot, IncrementGate, DecrementGate
+from dirty_period_finding.extensions import LimitedCapabilityEngine, Swap, X
+from dirty_period_finding.gates import (
+    Add,
+    Subtract,
+    MultiNot,
+    IncrementGate,
+    DecrementGate
+)
+from .._test_util import fuzz_permutation_circuit, check_permutation_circuit
 
 
 def test_exact_commands_for_small_circuit():

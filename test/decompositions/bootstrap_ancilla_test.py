@@ -4,16 +4,16 @@ from __future__ import unicode_literals
 
 from projectq.cengines import AutoReplacer, DecompositionRuleSet
 from projectq.setups.decompositions import swap2cnot
-from ._test_util import check_quantum_permutation_circuit
-from ..decompositions import (
+from .._test_util import check_quantum_permutation_circuit
+from dirty_period_finding.decompositions import (
     bootstrap_ancilla_rules,
     phase_gradient_rules,
     increment_rules,
     multi_not_rules,
     addition_rules
 )
-from ..extensions import LimitedCapabilityEngine, X
-from ..gates import Increment
+from dirty_period_finding.extensions import LimitedCapabilityEngine, X
+from dirty_period_finding.gates import Increment
 
 
 def test_full_cnot_permutations_small():

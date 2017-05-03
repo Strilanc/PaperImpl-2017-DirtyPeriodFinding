@@ -9,17 +9,20 @@ from projectq import MainEngine
 from projectq.cengines import (DummyEngine,
                                AutoReplacer,
                                DecompositionRuleSet)
-from ..extensions import SwapGate
 from projectq.setups.decompositions import swap2cnot
-from ._test_util import (
+
+from dirty_period_finding.decompositions import multi_not_rules
+from dirty_period_finding.decompositions import (
+    reverse_bits_rules,
+    rotate_bits_rules,
+)
+from dirty_period_finding.extensions import SwapGate, LimitedCapabilityEngine
+from dirty_period_finding.gates import RotateBitsGate
+from .._test_util import (
     bit_to_state_permutation,
     check_permutation_circuit,
     fuzz_permutation_circuit,
 )
-from ..decompositions import multi_not_rules
-from ..decompositions import reverse_bits_rules, rotate_bits_rules
-from ..extensions import LimitedCapabilityEngine
-from ..gates import RotateBitsGate
 
 
 def test_toffoli_size_of_bit_rotate():

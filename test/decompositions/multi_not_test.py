@@ -8,18 +8,19 @@ from projectq import MainEngine
 from projectq.cengines import (AutoReplacer,
                                DecompositionRuleSet,
                                DummyEngine)
-from ._test_util import (
-    fuzz_permutation_circuit, check_permutation_circuit
-)
-from ..decompositions import multi_not_rules
-from ..decompositions.multi_not_rules import (
+
+from dirty_period_finding.decompositions import multi_not_rules
+from dirty_period_finding.decompositions.multi_not_rules import (
     do_multi_not_with_one_big_not_and_friends,
     cut_not_max_controls_in_half,
     cut_not_max_controls_into_toffolis,
 )
-from ..extensions import LimitedCapabilityEngine
-from ..extensions import X
-from ..gates import MultiNot
+from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.extensions import X
+from dirty_period_finding.gates import MultiNot
+from .._test_util import (
+    fuzz_permutation_circuit, check_permutation_circuit
+)
 
 
 def test_do_multi_not_with_one_big_not_and_friends():

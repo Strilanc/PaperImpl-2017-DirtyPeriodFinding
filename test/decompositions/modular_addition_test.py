@@ -10,10 +10,8 @@ from projectq.cengines import (AutoReplacer,
                                DecompositionRuleSet,
                                DummyEngine)
 from projectq.setups.decompositions import swap2cnot
-from ._test_util import (
-    fuzz_permutation_circuit, check_permutation_circuit
-)
-from ..decompositions import (
+
+from dirty_period_finding.decompositions import (
     modular_addition_rules,
     pivot_flip_rules,
     offset_rules,
@@ -21,11 +19,12 @@ from ..decompositions import (
     increment_rules,
     multi_not_rules,
 )
-from ..extensions import LimitedCapabilityEngine
-from ..gates import (
+from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.gates import (
     ModularAdditionGate,
     ModularOffsetGate,
 )
+from .._test_util import fuzz_permutation_circuit, check_permutation_circuit
 
 
 def test_toffoli_size_of_modular_addition():

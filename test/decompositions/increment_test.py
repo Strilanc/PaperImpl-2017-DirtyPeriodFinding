@@ -9,15 +9,18 @@ from projectq.cengines import (AutoReplacer,
                                DecompositionRuleSet,
                                DummyEngine)
 from projectq.setups.decompositions import swap2cnot
-from ._test_util import fuzz_permutation_circuit
-from ..decompositions import (addition_rules,
-                              increment_rules,
-                              multi_not_rules)
-from ..decompositions.increment_rules import (
+
+from dirty_period_finding.decompositions import (
+    addition_rules,
+    increment_rules,
+    multi_not_rules
+)
+from dirty_period_finding.decompositions.increment_rules import (
     do_increment_with_no_controls_and_n_dirty
 )
-from ..extensions import LimitedCapabilityEngine
-from ..gates import Subtract, Increment, MultiNot
+from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.gates import Subtract, Increment, MultiNot
+from .._test_util import fuzz_permutation_circuit
 
 
 def test_do_increment_with_no_controls_and_n_dirty():

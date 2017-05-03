@@ -3,7 +3,11 @@ from __future__ import unicode_literals
 
 from projectq.ops import Command, X, Swap
 from projectq.types import Qureg, Qubit
-from ..extensions.to_ascii import commands_to_ascii_circuit
+
+from dirty_period_finding.extensions import (
+    commands_to_ascii_circuit,
+    CommandEx
+)
 
 
 def test_empty_circuit():
@@ -17,17 +21,17 @@ def test_addition_circuit():
 
     for i in reversed(range(10)):
         if i != 4:
-            commands.append(Command(eng, X, (qs[i],), controls=qs[4]))
+            commands.append(CommandEx(eng, X, (qs[i],), controls=qs[4]))
     for i in range(4):
-        commands.append(Command(eng, X, (qs[5+i],), controls=qs[4]))
-        commands.append(Command(eng, Swap, (qs[4], qs[i]), controls=qs[5+i]))
-    commands.append(Command(eng, X, (qs[-1],), controls=qs[4]))
+        commands.append(CommandEx(eng, X, (qs[5+i],), controls=qs[4]))
+        commands.append(CommandEx(eng, Swap, (qs[4], qs[i]), controls=qs[5+i]))
+    commands.append(CommandEx(eng, X, (qs[-1],), controls=qs[4]))
     for i in range(4)[::-1]:
-        commands.append(Command(eng, Swap, (qs[4], qs[i]), controls=qs[5+i]))
-        commands.append(Command(eng, X, (qs[5+i],), controls=qs[i]))
+        commands.append(CommandEx(eng, Swap, (qs[4], qs[i]), controls=qs[5+i]))
+        commands.append(CommandEx(eng, X, (qs[5+i],), controls=qs[i]))
     for i in range(10):
         if i != 4:
-            commands.append(Command(eng, X, (qs[i],), controls=qs[4]))
+            commands.append(CommandEx(eng, X, (qs[i],), controls=qs[4]))
 
     assert commands_to_ascii_circuit(commands) == '\n' + '''
 |0⟩─────────────────⊕───×───────────────────────────×─•─⊕─────────────────

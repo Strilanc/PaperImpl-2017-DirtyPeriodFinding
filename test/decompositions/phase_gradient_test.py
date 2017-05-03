@@ -3,10 +3,11 @@ from __future__ import division
 from __future__ import unicode_literals
 
 from projectq.cengines import AutoReplacer, DecompositionRuleSet
-from ._test_util import check_phase_circuit
-from ..decompositions import phase_gradient_rules
-from ..extensions import LimitedCapabilityEngine
-from ..gates import PhaseGradient
+
+from dirty_period_finding.decompositions import phase_gradient_rules
+from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.gates import PhaseGradient
+from .._test_util import check_phase_circuit
 
 
 def test_circuit_implements_phase_angle_specified_by_gate():

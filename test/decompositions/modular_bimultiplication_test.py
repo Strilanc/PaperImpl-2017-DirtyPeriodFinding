@@ -2,7 +2,13 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-from experiment.decompositions import (
+from projectq import MainEngine
+from projectq.cengines import (DummyEngine,
+                               AutoReplacer,
+                               DecompositionRuleSet)
+from projectq.setups.decompositions import swap2cnot
+
+from dirty_period_finding.decompositions import (
     modular_bimultiplication_rules,
     multi_not_rules,
     addition_rules,
@@ -15,19 +21,15 @@ from experiment.decompositions import (
     rotate_bits_rules,
     reverse_bits_rules,
 )
-from projectq import MainEngine
-from projectq.cengines import (DummyEngine,
-                               AutoReplacer,
-                               DecompositionRuleSet)
-from projectq.setups.decompositions import swap2cnot
-from ._test_util import fuzz_permutation_circuit
-from ..decompositions.modular_bimultiplication_rules import do_bimultiplication
-from ..extensions import LimitedCapabilityEngine
-from ..gates import (
+from dirty_period_finding.decompositions.modular_bimultiplication_rules \
+    import do_bimultiplication
+from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.gates import (
     ModularBimultiplicationGate,
     ModularScaledAdditionGate,
     RotateBitsGate,
 )
+from .._test_util import fuzz_permutation_circuit
 
 
 def test_do_bimultiplication():
