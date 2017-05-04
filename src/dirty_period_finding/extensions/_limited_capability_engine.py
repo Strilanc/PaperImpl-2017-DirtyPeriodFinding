@@ -118,8 +118,10 @@ class LimitedCapabilityEngine(BasicEngine):
                 len(cmd.control_qubits) <= 2):
             return True
 
-        if self.allow_single_qubit_gates and sum(
-                len(reg) for reg in cmd.all_qubits) == 1:
+        if (self.allow_single_qubit_gates and
+                sum(len(reg) for reg in cmd.all_qubits) == 1 and
+                hasattr(cmd.gate, 'matrix') and
+                len(cmd.gate.matrix) == 2):
             return True
 
         if self.allow_single_qubit_gates_with_controls and sum(
