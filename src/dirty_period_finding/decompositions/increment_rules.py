@@ -3,13 +3,18 @@
 from projectq.cengines import DecompositionRule
 
 from dirty_period_finding.extensions import (
-    X,
     min_workspace,
     min_workspace_vs_reg1,
     max_controls,
     workspace,
 )
-from dirty_period_finding.gates import Add, Subtract, IncrementGate, MultiNot
+from dirty_period_finding.gates import (
+    Add,
+    Subtract,
+    IncrementGate,
+    MultiNot,
+    X
+)
 
 
 def do_increment_with_no_controls_and_n_dirty(target_reg, dirty_reg):

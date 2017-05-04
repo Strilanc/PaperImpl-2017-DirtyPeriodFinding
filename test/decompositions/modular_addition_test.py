@@ -6,9 +6,7 @@ import itertools
 import random
 
 from projectq import MainEngine
-from projectq.cengines import (AutoReplacer,
-                               DecompositionRuleSet,
-                               DummyEngine)
+from projectq.cengines import DecompositionRuleSet, DummyEngine
 from projectq.setups.decompositions import swap2cnot
 
 from dirty_period_finding.decompositions import (
@@ -19,7 +17,10 @@ from dirty_period_finding.decompositions import (
     increment_rules,
     multi_not_rules,
 )
-from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.extensions import (
+    LimitedCapabilityEngine,
+    AutoReplacerEx,
+)
 from dirty_period_finding.gates import (
     ModularAdditionGate,
     ModularOffsetGate,
@@ -30,7 +31,7 @@ from .._test_util import fuzz_permutation_circuit, check_permutation_circuit
 def test_toffoli_size_of_modular_addition():
     rec = DummyEngine(save_commands=True)
     eng = MainEngine(backend=rec, engine_list=[
-        AutoReplacer(DecompositionRuleSet(modules=[
+        AutoReplacerEx(DecompositionRuleSet(modules=[
             pivot_flip_rules,
             offset_rules,
             addition_rules,
@@ -54,7 +55,7 @@ def test_toffoli_size_of_modular_addition():
 def test_toffoli_size_of_modular_offset():
     rec = DummyEngine(save_commands=True)
     eng = MainEngine(backend=rec, engine_list=[
-        AutoReplacer(DecompositionRuleSet(modules=[
+        AutoReplacerEx(DecompositionRuleSet(modules=[
             pivot_flip_rules,
             offset_rules,
             addition_rules,
@@ -88,7 +89,7 @@ def test_check_modular_offset_permutations_small():
                     permutation=lambda _, (t, c):
                         ((t + offset) % modulus if c + 1 == 1 << nc else t, c),
                     engine_list=[
-                        AutoReplacer(DecompositionRuleSet(modules=[
+                        AutoReplacerEx(DecompositionRuleSet(modules=[
                             modular_addition_rules,
                         ])),
                         LimitedCapabilityEngine(
@@ -114,7 +115,7 @@ def test_fuzz_modular_offset_permutations_large():
             permutation=lambda _, (t, c):
                 ((t + offset) % modulus if c + 1 == 1 << nc else t, c),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     modular_addition_rules,
                 ])),
                 LimitedCapabilityEngine(
@@ -138,7 +139,7 @@ def test_check_modular_addition_permutations_small():
                 permutation=lambda _, (a, t, c):
                     (a, (t + a) % modulus if c + 1 == 1 << nc else t, c),
                 engine_list=[
-                    AutoReplacer(DecompositionRuleSet(modules=[
+                    AutoReplacerEx(DecompositionRuleSet(modules=[
                         modular_addition_rules,
                     ])),
                     LimitedCapabilityEngine(
@@ -163,7 +164,7 @@ def test_fuzz_modular_addition_permutations_large():
             permutation=lambda _, (a, t, c):
             (a, (t + a) % modulus if c + 1 == 1 << nc else t, c),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     modular_addition_rules,
                 ])),
                 LimitedCapabilityEngine(

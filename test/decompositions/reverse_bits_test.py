@@ -6,14 +6,15 @@ import itertools
 import random
 
 from projectq import MainEngine
-from projectq.cengines import (DummyEngine,
-                               AutoReplacer,
-                               DecompositionRuleSet)
+from projectq.cengines import DummyEngine, DecompositionRuleSet
 from projectq.setups.decompositions import swap2cnot
 
 from dirty_period_finding.decompositions import multi_not_rules
 from dirty_period_finding.decompositions import reverse_bits_rules
-from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.extensions import (
+    LimitedCapabilityEngine,
+    AutoReplacerEx,
+)
 from dirty_period_finding.extensions import SwapGate
 from dirty_period_finding.gates import ReverseBits
 from .._test_util import (
@@ -26,7 +27,7 @@ from .._test_util import (
 def test_toffoli_size_of_reverse():
     rec = DummyEngine(save_commands=True)
     eng = MainEngine(backend=rec, engine_list=[
-        AutoReplacer(DecompositionRuleSet(modules=[
+        AutoReplacerEx(DecompositionRuleSet(modules=[
             swap2cnot,
             multi_not_rules,
             reverse_bits_rules,
@@ -51,7 +52,7 @@ def test_check_small_reversals():
                 lambda ns, b, (c, ): b if c + 1 != 1 << ns[1]
                                      else ns[0] - b - 1),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     reverse_bits_rules,
                 ])),
                 LimitedCapabilityEngine(
@@ -73,7 +74,7 @@ def test_fuzz_large_reversals():
                 lambda ns, b, (c,): b if c + 1 != 1 << ns[1]
                                     else ns[0] - b - 1),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     reverse_bits_rules,
                 ])),
                 LimitedCapabilityEngine(

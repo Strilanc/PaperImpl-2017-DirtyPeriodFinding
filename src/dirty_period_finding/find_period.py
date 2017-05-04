@@ -4,16 +4,20 @@ from __future__ import unicode_literals
 import math
 from fractions import Fraction
 
-from experiment.decompositions import *
-from experiment.gates import *
 from projectq import MainEngine
 from projectq.backends import Simulator, ResourceCounter
-from projectq.cengines import AutoReplacer, DecompositionRuleSet
+from projectq.cengines import DecompositionRuleSet
 from projectq.ops import Measure
 from projectq.setups.decompositions import swap2cnot
 from projectq.types import Qureg
-from .extensions import H, X
-from .extensions.limited_capability_engine import LimitedCapabilityEngine
+
+from dirty_period_finding.decompositions import *
+from dirty_period_finding.extensions import (
+    H,
+    LimitedCapabilityEngine,
+    AutoReplacerEx,
+)
+from dirty_period_finding.gates import *
 
 
 def measure_qureg(qureg):
@@ -87,7 +91,7 @@ def main():
     sim = Simulator()
     ctr = ResourceCounter()
     eng = MainEngine(backend=sim, engine_list=[
-        AutoReplacer(DecompositionRuleSet(modules=[
+        AutoReplacerEx(DecompositionRuleSet(modules=[
             addition_rules,
             increment_rules,
             modular_addition_rules,

@@ -5,14 +5,17 @@ from __future__ import unicode_literals
 import itertools
 import random
 
-from projectq.cengines import AutoReplacer, DecompositionRuleSet
+from projectq.cengines import DecompositionRuleSet
 
 from dirty_period_finding.decompositions import offset_rules, multi_not_rules
 from dirty_period_finding.decompositions.offset_rules import (
     do_predict_carry_signals,
     do_predict_overflow,
 )
-from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.extensions import (
+    LimitedCapabilityEngine,
+    AutoReplacerEx,
+)
 from dirty_period_finding.gates import OffsetGate
 from .._test_util import fuzz_permutation_circuit, check_permutation_circuit
 
@@ -43,7 +46,7 @@ def test_do_predict_carry_signals_small():
                 permutation=lambda _, (q, t):
                     (q, t ^ _carry_signals(q, offset)),
                 engine_list=[
-                    AutoReplacer(DecompositionRuleSet(modules=[
+                    AutoReplacerEx(DecompositionRuleSet(modules=[
                         offset_rules,
                         multi_not_rules,
                     ])),
@@ -67,7 +70,7 @@ def test_do_predict_overflow_signal_small():
                      c,
                      d),
                 engine_list=[
-                    AutoReplacer(DecompositionRuleSet(modules=[
+                    AutoReplacerEx(DecompositionRuleSet(modules=[
                         offset_rules,
                         multi_not_rules,
                     ])),
@@ -93,7 +96,7 @@ def test_check_offset_permutations_small():
                 permutation=lambda _, (t, d, c):
                     (t + (offset if c + 1 == 1 << nc else 0), d, c),
                 engine_list=[
-                    AutoReplacer(DecompositionRuleSet(modules=[
+                    AutoReplacerEx(DecompositionRuleSet(modules=[
                         offset_rules,
                         multi_not_rules,
                     ])),
@@ -117,7 +120,7 @@ def test_fuzz_offset_permutations_large():
             permutation=lambda _, (t, d, c):
                 (t + (offset if c + 1 == 1 << nc else 0), d, c),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     offset_rules,
                     multi_not_rules,
                 ])),

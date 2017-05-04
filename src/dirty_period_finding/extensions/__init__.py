@@ -1,15 +1,16 @@
+from . import _monkey_patching
 from ._basic_gate_ex import (
     BasicGateEx,
-    X,
     H,
-    XGate,
     SelfInverseGateEx,
 )
 from ._basic_math_gate_ex import (
     BasicMathGateEx,
+    BasicSizedMathGateEx,
     Swap,
     SwapGate,
 )
+from ._cached_auto_replacer import AutoReplacerEx
 from ._classical_simulator import ClassicalSimulator
 from ._command_ex import CommandEx
 from ._command_predicates import (

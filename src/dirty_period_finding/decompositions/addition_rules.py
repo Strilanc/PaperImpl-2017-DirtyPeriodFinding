@@ -5,7 +5,6 @@ from projectq.cengines import DecompositionRule
 from projectq.meta import Control
 
 from dirty_period_finding.extensions import (
-    X,
     Swap,
     min_workspace,
     min_controls,
@@ -15,6 +14,7 @@ from dirty_period_finding.extensions import (
     workspace,
 )
 from dirty_period_finding.gates import (
+    X,
     AdditionGate,
     Increment,
     Decrement,

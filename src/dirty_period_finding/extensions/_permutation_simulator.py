@@ -126,7 +126,7 @@ class PermutationSimulator(BasicEngine):
             def reordered_op(v):
                 xs = [self._internal_order_to_given_order(v, reg)
                       for reg in cmd.qubits]
-                ys = cmd.gate.get_math_function(None)(xs)
+                ys = cmd.gate.get_math_function(cmd.qubits)(xs)
                 pys = [
                     self._given_order_to_internal_order(
                         y & ((1 << len(reg)) - 1),

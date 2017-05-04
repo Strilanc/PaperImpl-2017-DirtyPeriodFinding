@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import math
+
 from projectq.cengines import DecompositionRule
 
+from dirty_period_finding.gates import X
 from dirty_period_finding.extensions import (
-    X,
     min_workspace,
     min_controls,
     max_controls,
@@ -164,12 +166,16 @@ def do_recursive_offset(gate, target_reg, dirty_qubit, controls):
         controls (list[Qubit]):
             Control qubits.
     """
-    offset = gate.offset & ((1 << len(target_reg)) - 1)
+    offset = gate.offset & ~(~0 << len(target_reg))
+
+    # Trivial case: adding zero does nothing.
     if offset == 0:
         return
-    if len(target_reg) <= 1:
-        if offset % 2 == 1:
-            Increment | target_reg
+
+    # Trivial case: adding a power of 2 is a shifted increment.
+    if (offset - 1) & offset == 0:
+        power = int(math.floor(0.5 + math.log(offset, 2)))
+        Increment & controls | target_reg[power:]
         return
 
     h = len(target_reg) // 2
@@ -185,9 +191,9 @@ def do_recursive_offset(gate, target_reg, dirty_qubit, controls):
     MultiNot & dirty_qubit | high
 
     # Separately recurse on low and high parts.
-    mask = (1 << h) - 1
-    low_offset = offset & mask
-    high_offset = (offset & ~mask) >> h
+    mask = (~0 << h)
+    low_offset = offset & ~mask
+    high_offset = (offset & mask) >> h
     OffsetGate(low_offset) & controls | low
     OffsetGate(high_offset) & controls | high
 

@@ -6,9 +6,7 @@ import itertools
 import random
 
 from projectq import MainEngine
-from projectq.cengines import (DummyEngine,
-                               AutoReplacer,
-                               DecompositionRuleSet)
+from projectq.cengines import DummyEngine, DecompositionRuleSet
 from projectq.setups.decompositions import swap2cnot
 
 from dirty_period_finding.decompositions import multi_not_rules
@@ -16,7 +14,10 @@ from dirty_period_finding.decompositions import (
     reverse_bits_rules,
     rotate_bits_rules,
 )
-from dirty_period_finding.extensions import SwapGate, LimitedCapabilityEngine
+from dirty_period_finding.extensions import (
+    LimitedCapabilityEngine,
+    AutoReplacerEx,
+)
 from dirty_period_finding.gates import RotateBitsGate
 from .._test_util import (
     bit_to_state_permutation,
@@ -28,7 +29,7 @@ from .._test_util import (
 def test_toffoli_size_of_bit_rotate():
     rec = DummyEngine(save_commands=True)
     eng = MainEngine(backend=rec, engine_list=[
-        AutoReplacer(DecompositionRuleSet(modules=[
+        AutoReplacerEx(DecompositionRuleSet(modules=[
             swap2cnot,
             multi_not_rules,
             reverse_bits_rules,
@@ -55,13 +56,11 @@ def test_check_small_rotations():
                 lambda ns, b, (c, ): b if c + 1 != 1 << ns[1]
                                      else (b + rot) % ns[0]),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     rotate_bits_rules,
-                    reverse_bits_rules,
                 ])),
                 LimitedCapabilityEngine(
-                    allow_nots_with_many_controls=True,
-                    allow_classes=[SwapGate],
+                    allow_arithmetic=True,
                     ban_classes=[RotateBitsGate.__class__],
                 )
             ],
@@ -79,13 +78,11 @@ def test_fuzz_large_reversals():
                 lambda ns, b, (c, ): b if c + 1 != 1 << ns[1]
                                      else (b + rot) % ns[0]),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     rotate_bits_rules,
-                    reverse_bits_rules,
                 ])),
                 LimitedCapabilityEngine(
-                    allow_nots_with_many_controls=True,
-                    allow_classes=[SwapGate],
+                    allow_arithmetic=True,
                     ban_classes=[RotateBitsGate.__class__],
                 )
             ],

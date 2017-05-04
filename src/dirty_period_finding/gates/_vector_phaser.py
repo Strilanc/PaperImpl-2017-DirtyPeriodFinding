@@ -6,8 +6,9 @@ import cmath
 import math
 
 import numpy as np
+import projectq.ops
 
-from dirty_period_finding.extensions import BasicGateEx
+from dirty_period_finding.extensions import BasicGateEx, BasicMathGateEx
 
 
 def _exp_pi_i(f):
@@ -43,9 +44,6 @@ class VectorPhaserGate(BasicGateEx):
         p = _exp_pi_i(self.half_turns)
         return np.identity(len(self.vector)) + (p - 1) * d
 
-    def get_inverse(self):
-        return VectorPhaserGate(self.vector, -self.half_turns)
-
     def __pow__(self, power):
         """
 
@@ -58,6 +56,7 @@ class VectorPhaserGate(BasicGateEx):
 
     @abc.abstractmethod
     def base_str(self):
+        return self.__class__.__name__ + '???'
         raise NotImplementedError()
 
     def with_half_turns(self, turns):
@@ -110,6 +109,9 @@ class ZGate(VectorPhaserGate):
     def with_half_turns(self, half_turns):
         return ZGate(half_turns)
 
+    def get_inverse(self):
+        return self
+
     def base_str(self):
         return "Z"
 
@@ -125,9 +127,17 @@ class ZGate(VectorPhaserGate):
         return VectorPhaserGate.__str__(self)
 
 
-class XGate(VectorPhaserGate):
+class XGate(VectorPhaserGate, BasicMathGateEx, projectq.ops.XGate):
     def __init__(self, half_turns=1.0):
+        BasicMathGateEx.__init__(self)
+        projectq.ops.XGate.__init__(self)
         VectorPhaserGate.__init__(self, [1, -1], half_turns)
+
+    def do_operation(self, r):
+        return 1 if r == 0 else 0,
+
+    def get_inverse(self):
+        return self
 
     def with_half_turns(self, half_turns):
         return XGate(half_turns)

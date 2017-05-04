@@ -1,13 +1,25 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from dirty_period_finding.extensions import BasicGateEx
+from dirty_period_finding.extensions import BasicSizedMathGateEx
 
 
-class RotateBitsGate(BasicGateEx):
+class RotateBitsGate(BasicSizedMathGateEx):
     def __init__(self, amount):
-        BasicGateEx.__init__(self)
+        BasicSizedMathGateEx.__init__(self)
         self.amount = amount
+
+    def do_operation(self, sizes, args):
+        assert len(sizes) == 1
+        assert len(args) == 1
+        n = sizes[0]
+        v = args[0]
+        if n == 0:
+            return v
+        r = self.amount % n
+        m = ~0 << (n - r)
+        high, low = v & m, v & ~m
+        return (low << r) | (high >> (n - r)),
 
     def __repr__(self):
         return "RotateBitsGate({})".format(repr(self.amount))

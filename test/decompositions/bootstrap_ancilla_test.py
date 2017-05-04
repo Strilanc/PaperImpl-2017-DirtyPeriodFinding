@@ -2,9 +2,9 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-from projectq.cengines import AutoReplacer, DecompositionRuleSet
+from projectq.cengines import DecompositionRuleSet
 from projectq.setups.decompositions import swap2cnot
-from .._test_util import check_quantum_permutation_circuit
+
 from dirty_period_finding.decompositions import (
     bootstrap_ancilla_rules,
     phase_gradient_rules,
@@ -12,8 +12,12 @@ from dirty_period_finding.decompositions import (
     multi_not_rules,
     addition_rules
 )
-from dirty_period_finding.extensions import LimitedCapabilityEngine, X
-from dirty_period_finding.gates import Increment
+from dirty_period_finding.extensions import (
+    AutoReplacerEx,
+    LimitedCapabilityEngine,
+)
+from dirty_period_finding.gates import Increment, X
+from .._test_util import check_quantum_permutation_circuit
 
 
 def test_full_cnot_permutations_small():
@@ -25,7 +29,7 @@ def test_full_cnot_permutations_small():
             permutation_func=lambda ns, (i,):
                 i ^ (1 if control_mask & i == control_mask else 0),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     bootstrap_ancilla_rules,
                     phase_gradient_rules,
                     increment_rules,
@@ -51,7 +55,7 @@ def test_full_increment_permutations_small():
                 permutation_func=lambda ns, (i,):
                     i + (1 << c if control_mask & i == control_mask else 0),
                 engine_list=[
-                    AutoReplacer(DecompositionRuleSet(modules=[
+                    AutoReplacerEx(DecompositionRuleSet(modules=[
                         bootstrap_ancilla_rules,
                         phase_gradient_rules,
                         increment_rules,

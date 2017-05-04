@@ -6,9 +6,7 @@ import itertools
 import random
 
 from projectq import MainEngine
-from projectq.cengines import (AutoReplacer,
-                               DecompositionRuleSet,
-                               DummyEngine)
+from projectq.cengines import DecompositionRuleSet, DummyEngine
 from projectq.setups.decompositions import swap2cnot
 
 from dirty_period_finding.decompositions import (
@@ -21,9 +19,13 @@ from dirty_period_finding.decompositions import (
     rotate_bits_rules,
     reverse_bits_rules,
 )
-from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.extensions import (
+    LimitedCapabilityEngine,
+    AutoReplacerEx,
+)
 from dirty_period_finding.gates import (
-    ModularDoubleGate, ModularUndoubleGate, RotateBitsGate, ReverseBitsGate
+    ModularDoubleGate,
+    ModularUndoubleGate,
 )
 from .._test_util import fuzz_permutation_circuit, check_permutation_circuit
 
@@ -31,7 +33,7 @@ from .._test_util import fuzz_permutation_circuit, check_permutation_circuit
 def test_toffoli_size_of_modular_double():
     rec = DummyEngine(save_commands=True)
     eng = MainEngine(backend=rec, engine_list=[
-        AutoReplacer(DecompositionRuleSet(modules=[
+        AutoReplacerEx(DecompositionRuleSet(modules=[
             modular_double_rules,
             pivot_flip_rules,
             offset_rules,
@@ -65,18 +67,14 @@ def test_check_modular_double_permutations_small():
                 permutation=lambda _, (t, c):
                     (t * 2 % modulus if c + 1 == 1 << nc else t, c),
                 engine_list=[
-                    AutoReplacer(DecompositionRuleSet(modules=[
+                    AutoReplacerEx(DecompositionRuleSet(modules=[
                         modular_double_rules,
-                        rotate_bits_rules,
-                        reverse_bits_rules,
                     ])),
                     LimitedCapabilityEngine(
                         allow_all=True,
                         ban_classes=[
                             ModularDoubleGate,
                             ModularUndoubleGate,
-                            RotateBitsGate,
-                            ReverseBitsGate,
                         ],
                     ),
                 ],
@@ -97,18 +95,14 @@ def test_fuzz_modular_double_permutations_large():
             permutation=lambda _, (t, c):
                 (t * 2 % modulus if c + 1 == 1 << nc else t, c),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     modular_double_rules,
-                    rotate_bits_rules,
-                    reverse_bits_rules,
                 ])),
                 LimitedCapabilityEngine(
                     allow_all=True,
                     ban_classes=[
                         ModularDoubleGate,
                         ModularUndoubleGate,
-                        RotateBitsGate,
-                        ReverseBitsGate,
                     ],
                 ),
             ],

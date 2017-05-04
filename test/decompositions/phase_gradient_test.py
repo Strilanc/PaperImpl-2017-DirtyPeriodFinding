@@ -2,10 +2,13 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-from projectq.cengines import AutoReplacer, DecompositionRuleSet
+from projectq.cengines import DecompositionRuleSet
 
 from dirty_period_finding.decompositions import phase_gradient_rules
-from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.extensions import (
+    LimitedCapabilityEngine,
+    AutoReplacerEx,
+)
 from dirty_period_finding.gates import PhaseGradient
 from .._test_util import check_phase_circuit
 
@@ -16,7 +19,7 @@ def test_circuit_implements_phase_angle_specified_by_gate():
         expected_turns=lambda lens, vals:
             PhaseGradient.phase_angle_in_turns_for(vals[0], lens[0]),
         engine_list=[
-            AutoReplacer(DecompositionRuleSet(modules=[
+            AutoReplacerEx(DecompositionRuleSet(modules=[
                 phase_gradient_rules
             ])),
             LimitedCapabilityEngine(
@@ -32,7 +35,7 @@ def test_controlled_circuit():
         expected_turns=lambda (ns, nc), (s, c):
             s/2**ns/-4 if c + 1 == 1 << nc else 0,
         engine_list=[
-            AutoReplacer(DecompositionRuleSet(modules=[
+            AutoReplacerEx(DecompositionRuleSet(modules=[
                 phase_gradient_rules
             ])),
             LimitedCapabilityEngine(

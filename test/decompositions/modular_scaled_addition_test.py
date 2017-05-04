@@ -6,9 +6,7 @@ import itertools
 import random
 
 from projectq import MainEngine
-from projectq.cengines import (AutoReplacer,
-                               DecompositionRuleSet,
-                               DummyEngine)
+from projectq.cengines import DummyEngine, DecompositionRuleSet
 from projectq.setups.decompositions import swap2cnot
 
 from dirty_period_finding.decompositions import (
@@ -23,17 +21,18 @@ from dirty_period_finding.decompositions import (
     rotate_bits_rules,
     reverse_bits_rules,
 )
-from dirty_period_finding.extensions import LimitedCapabilityEngine
-from dirty_period_finding.gates import (
-    ModularScaledAdditionGate,
+from dirty_period_finding.extensions import (
+    LimitedCapabilityEngine,
+    AutoReplacerEx,
 )
+from dirty_period_finding.gates import ModularScaledAdditionGate
 from .._test_util import fuzz_permutation_circuit, check_permutation_circuit
 
 
 def test_toffoli_size_of_scaled_modular_addition():
     rec = DummyEngine(save_commands=True)
     eng = MainEngine(backend=rec, engine_list=[
-        AutoReplacer(DecompositionRuleSet(modules=[
+        AutoReplacerEx(DecompositionRuleSet(modules=[
             modular_scaled_addition_rules,
             modular_double_rules,
             rotate_bits_rules,
@@ -72,7 +71,7 @@ def test_check_scaled_modular_addition_permutations_small():
                          (t + a * factor) % modulus if c + 1 == 1 << nc else t,
                          c),
                     engine_list=[
-                        AutoReplacer(DecompositionRuleSet(modules=[
+                        AutoReplacerEx(DecompositionRuleSet(modules=[
                             modular_scaled_addition_rules,
                         ])),
                         LimitedCapabilityEngine(
@@ -102,7 +101,7 @@ def test_fuzz_scaled_modular_addition_permutations_large():
                  (t + a * factor) % modulus if c + 1 == 1 << nc else t,
                  c),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     modular_scaled_addition_rules,
                 ])),
                 LimitedCapabilityEngine(

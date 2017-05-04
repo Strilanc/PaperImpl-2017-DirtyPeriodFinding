@@ -6,7 +6,8 @@ from projectq.ops import (
 )
 from projectq.types import Qubit
 
-from dirty_period_finding.extensions import X, LimitedCapabilityEngine
+from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.gates import X
 
 
 def test_limited_capability_engine_default():

@@ -64,10 +64,6 @@ class GateWithCurriedControls(BasicGateEx):
                 self._controls == other._controls)
 
 
-class XGate(projectq.ops.XGate, BasicGateEx):
-    pass
-
-
 class HGate(projectq.ops.HGate, BasicGateEx):
     pass
 
@@ -75,5 +71,4 @@ class HGate(projectq.ops.HGate, BasicGateEx):
 class SelfInverseGateEx(projectq.ops.SelfInverseGate, BasicGateEx):
     pass
 
-X = XGate()
 H = HGate()

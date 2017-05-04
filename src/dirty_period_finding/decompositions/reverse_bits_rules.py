@@ -6,11 +6,10 @@ from projectq.cengines import DecompositionRule
 
 from dirty_period_finding.extensions import (
     Swap,
-    X,
     min_controls,
     max_controls,
 )
-from dirty_period_finding.gates import ReverseBitsGate
+from dirty_period_finding.gates import ReverseBitsGate, X
 
 
 def do_naive_bit_reverse(target_reg, controls):
@@ -52,7 +51,6 @@ def do_naive_bit_reverse(target_reg, controls):
         controls (list[projectq.types.Qubit]):
             Qubits that condition the operation.
     """
-
     for i in range(len(target_reg) // 2):
         Swap & controls | (target_reg[i], target_reg[-i-1])
 

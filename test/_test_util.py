@@ -8,16 +8,17 @@ import math
 import random
 
 import numpy as np
-
 from projectq import MainEngine
 from projectq.backends import Simulator
 from projectq.cengines import DummyEngine
-from projectq.ops import X, H, All, Rz, Measure
+from projectq.ops import H, All, Rz, Measure
+
 from dirty_period_finding.extensions import (
     ClassicalSimulator,
     PermutationSimulator,
     commands_to_ascii_circuit,
 )
+from dirty_period_finding.gates import X
 
 
 def check_phase_circuit(register_sizes,

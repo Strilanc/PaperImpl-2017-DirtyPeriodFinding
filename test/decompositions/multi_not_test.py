@@ -5,9 +5,7 @@ from __future__ import unicode_literals
 import random
 
 from projectq import MainEngine
-from projectq.cengines import (AutoReplacer,
-                               DecompositionRuleSet,
-                               DummyEngine)
+from projectq.cengines import DecompositionRuleSet, DummyEngine
 
 from dirty_period_finding.decompositions import multi_not_rules
 from dirty_period_finding.decompositions.multi_not_rules import (
@@ -15,9 +13,12 @@ from dirty_period_finding.decompositions.multi_not_rules import (
     cut_not_max_controls_in_half,
     cut_not_max_controls_into_toffolis,
 )
-from dirty_period_finding.extensions import LimitedCapabilityEngine
-from dirty_period_finding.extensions import X
+from dirty_period_finding.extensions import (
+    LimitedCapabilityEngine,
+    AutoReplacerEx,
+)
 from dirty_period_finding.gates import MultiNot
+from dirty_period_finding.gates import X
 from .._test_util import (
     fuzz_permutation_circuit, check_permutation_circuit
 )
@@ -99,7 +100,7 @@ def test_cut_not_max_controls_into_toffolis():
 def test_big_decomposition_chain_size():
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=[
-        AutoReplacer(DecompositionRuleSet(modules=[
+        AutoReplacerEx(DecompositionRuleSet(modules=[
             multi_not_rules,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
@@ -126,7 +127,7 @@ def test_permutations_small():
                      c,
                      d),
                 engine_list=[
-                    AutoReplacer(DecompositionRuleSet(modules=[
+                    AutoReplacerEx(DecompositionRuleSet(modules=[
                         multi_not_rules,
                     ])),
                     LimitedCapabilityEngine(allow_toffoli=True),
@@ -143,7 +144,7 @@ def test_fuzz_large():
             permutation=lambda ns, (t, c):
                 (t ^ (((1 << targets) - 1) if c+1 == 1 << controls else 0), c),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     multi_not_rules,
                 ])),
                 LimitedCapabilityEngine(allow_toffoli=True),

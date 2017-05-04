@@ -5,9 +5,7 @@ from __future__ import unicode_literals
 import random
 
 from projectq import MainEngine
-from projectq.cengines import (AutoReplacer,
-                               DecompositionRuleSet,
-                               DummyEngine)
+from projectq.cengines import DecompositionRuleSet, DummyEngine
 from projectq.setups.decompositions import swap2cnot
 
 from dirty_period_finding.decompositions import (
@@ -18,7 +16,10 @@ from dirty_period_finding.decompositions import (
 from dirty_period_finding.decompositions.increment_rules import (
     do_increment_with_no_controls_and_n_dirty
 )
-from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.extensions import (
+    AutoReplacerEx,
+    LimitedCapabilityEngine,
+)
 from dirty_period_finding.gates import Subtract, Increment, MultiNot
 from .._test_util import fuzz_permutation_circuit
 
@@ -45,7 +46,7 @@ def test_fuzz_do_increment_with_no_controls_and_n_dirty():
         fuzz_permutation_circuit(
             register_sizes=[4, 4],
             permutation=lambda ns, (a, b): (a + 1, b),
-            engine_list=[AutoReplacer(DecompositionRuleSet(modules=[
+            engine_list=[AutoReplacerEx(DecompositionRuleSet(modules=[
                 addition_rules,
                 multi_not_rules,
                 swap2cnot
@@ -59,7 +60,7 @@ def test_fuzz_do_increment_with_no_controls_and_n_dirty():
 def test_toffoli_size_of_increment():
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=[
-        AutoReplacer(DecompositionRuleSet(modules=[
+        AutoReplacerEx(DecompositionRuleSet(modules=[
             multi_not_rules,
             increment_rules,
             addition_rules,
@@ -84,7 +85,7 @@ def test_fuzz_controlled_increment():
             permutation=lambda ns, (c, t, d):
                 (c, t + (1 if c == satisfy else 0), d),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     swap2cnot,
                     multi_not_rules,
                     increment_rules,

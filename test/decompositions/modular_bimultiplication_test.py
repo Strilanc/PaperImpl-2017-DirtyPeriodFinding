@@ -3,9 +3,7 @@ from __future__ import division
 from __future__ import unicode_literals
 
 from projectq import MainEngine
-from projectq.cengines import (DummyEngine,
-                               AutoReplacer,
-                               DecompositionRuleSet)
+from projectq.cengines import DummyEngine, DecompositionRuleSet
 from projectq.setups.decompositions import swap2cnot
 
 from dirty_period_finding.decompositions import (
@@ -23,7 +21,10 @@ from dirty_period_finding.decompositions import (
 )
 from dirty_period_finding.decompositions.modular_bimultiplication_rules \
     import do_bimultiplication
-from dirty_period_finding.extensions import LimitedCapabilityEngine
+from dirty_period_finding.extensions import (
+    AutoReplacerEx,
+    LimitedCapabilityEngine,
+)
 from dirty_period_finding.gates import (
     ModularBimultiplicationGate,
     ModularScaledAdditionGate,
@@ -48,14 +49,14 @@ def test_do_bimultiplication():
         (m(3, 13) & c).generate_command((a, b)),
         (m(4, 13) & c).generate_command((b, a)),
         (m(3, 13) & c).generate_command((a, b)),
-        (RotateBitsGate(10) & c).generate_command(a + b),
+        (RotateBitsGate(4) & c).generate_command(a + b),
     ]
 
 
 def test_toffoli_size_of_bimultiplication():
     rec = DummyEngine(save_commands=True)
     eng = MainEngine(backend=rec, engine_list=[
-        AutoReplacer(DecompositionRuleSet(modules=[
+        AutoReplacerEx(DecompositionRuleSet(modules=[
             swap2cnot,
             multi_not_rules,
             addition_rules,
@@ -100,14 +101,11 @@ def test_fuzz_bimultiplication():
                 if c != 2**cn - 1
                 else (a*f % mod, c, b*-inv_f % mod),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     modular_bimultiplication_rules,
-                    reverse_bits_rules,
-                    rotate_bits_rules
                 ])),
                 LimitedCapabilityEngine(
-                    allow_arithmetic=True,
-                    allow_nots_with_many_controls=True,
+                    allow_all=True,
                     ban_classes=[ModularBimultiplicationGate]
                 )
             ],

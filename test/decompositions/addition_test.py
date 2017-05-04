@@ -7,7 +7,6 @@ import random
 
 from projectq import MainEngine
 from projectq.cengines import (DummyEngine,
-                               AutoReplacer,
                                DecompositionRuleSet)
 from projectq.setups.decompositions import swap2cnot
 from projectq.types import Qureg
@@ -20,13 +19,19 @@ from dirty_period_finding.decompositions import (
 from dirty_period_finding.decompositions.addition_rules import (
     do_addition_with_same_size_and_no_controls
 )
-from dirty_period_finding.extensions import LimitedCapabilityEngine, Swap, X
+from dirty_period_finding.extensions import (
+    LimitedCapabilityEngine,
+    Swap,
+    AutoReplacerEx,
+)
 from dirty_period_finding.gates import (
     Add,
     Subtract,
     MultiNot,
     IncrementGate,
-    DecrementGate
+    DecrementGate,
+    X,
+    XGate,
 )
 from .._test_util import fuzz_permutation_circuit, check_permutation_circuit
 
@@ -53,9 +58,10 @@ def test_exact_commands_for_small_circuit():
 
 
 def test_toffoli_size_of_addition():
+    x = XGate()
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=[
-        AutoReplacer(DecompositionRuleSet(modules=[
+        AutoReplacerEx(DecompositionRuleSet(modules=[
             swap2cnot,
             multi_not_rules,
             addition_rules,
@@ -84,7 +90,7 @@ def test_check_small_permutations():
                  c,
                  d),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     swap2cnot,
                     multi_not_rules,
                     addition_rules,
@@ -105,7 +111,7 @@ def test_fuzz_large_add_same_size():
             register_sizes=[n, n],
             permutation=lambda ns, (a, b): (a, b + a),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     swap2cnot,
                     multi_not_rules,
                     addition_rules
@@ -122,7 +128,7 @@ def test_fuzz_large_subtract_different_sizes():
             register_sizes=[n, n + e, 2],
             permutation=lambda ns, (a, b, d): (a, b - a, d),
             engine_list=[
-                AutoReplacer(DecompositionRuleSet(modules=[
+                AutoReplacerEx(DecompositionRuleSet(modules=[
                     swap2cnot,
                     multi_not_rules,
                     addition_rules,

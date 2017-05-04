@@ -1,10 +1,20 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from dirty_period_finding.extensions import SelfInverseGateEx
+from dirty_period_finding.extensions import (
+    SelfInverseGateEx,
+    BasicSizedMathGateEx,
+)
 
 
-class ReverseBitsGate(SelfInverseGateEx):
+class ReverseBitsGate(BasicSizedMathGateEx, SelfInverseGateEx):
+    def do_operation(self, sizes, args):
+        assert len(sizes) == 1
+        assert len(args) == 1
+        n = sizes[0]
+        v = args[0]
+        return sum(((v >> i) & 1) << (n - i - 1) for i in range(n)),
+
     def __repr__(self):
         return "ReverseBits"
 
