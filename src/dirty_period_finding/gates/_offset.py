@@ -20,3 +20,10 @@ class OffsetGate(BasicMathGateEx):
 
     def __str__(self):
         return '{}{}'.format('+' if self.offset >= 0 else '', self.offset)
+
+    def __eq__(self, other):
+        return (isinstance(other, OffsetGate) and
+                self.offset == other.offset)
+
+    def __hash__(self):
+        return hash((OffsetGate, self.offset))

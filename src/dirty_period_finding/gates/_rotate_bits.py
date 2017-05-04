@@ -17,6 +17,13 @@ class RotateBitsGate(BasicGateEx):
             return ">>>" + str(-self.amount)
         return "<<<" + str(self.amount)
 
+    def __eq__(self, other):
+        return (isinstance(other, RotateBitsGate) and
+                self.amount == other.amount)
+
+    def __hash__(self):
+        return hash((RotateBitsGate, self.amount))
+
     def __pow__(self, power):
         return RotateBitsGate(self.amount * power)
 

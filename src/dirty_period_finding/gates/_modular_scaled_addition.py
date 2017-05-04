@@ -27,6 +27,14 @@ class ModularScaledAdditionGate(BasicMathGateEx):
     def __str__(self):
         return repr(self)
 
+    def __eq__(self, other):
+        return (isinstance(other, ModularScaledAdditionGate) and
+                self.factor == other.factor and
+                self.modulus == other.modulus)
+
+    def __hash__(self):
+        return hash((ModularScaledAdditionGate, self.modulus, self.factor))
+
     def ascii_register_labels(self):
         return ['A', '+A·{} (mod {})'.format(self.factor, self.modulus)]
 

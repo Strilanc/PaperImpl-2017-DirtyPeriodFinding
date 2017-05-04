@@ -25,6 +25,13 @@ class PhaseGradientGate(BasicGateEx):
         if self.factor == 1: return "PhaseGradient"
         return "PhaseGradient**" + str(self.factor)
 
+    def __eq__(self, other):
+        return (isinstance(other, PhaseGradientGate) and
+                self.factor == other.factor)
+
+    def __hash__(self):
+        return hash((PhaseGradientGate, self.factor))
+
     def __pow__(self, power):
         """
         Args:

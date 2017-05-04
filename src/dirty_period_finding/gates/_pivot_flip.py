@@ -14,6 +14,12 @@ class PivotFlipGate(BasicMathGateEx, SelfInverseGateEx):
             return pivot, x
         return pivot, pivot - x - 1
 
+    def __eq__(self, other):
+        return isinstance(other, PivotFlipGate)
+
+    def __hash__(self):
+        return hash(PivotFlipGate)
+
     def __repr__(self):
         return 'PivotFlip'
 
@@ -34,6 +40,13 @@ class ConstPivotFlipGate(BasicMathGateEx, SelfInverseGateEx):
         if x >= self.pivot:
             return x,
         return self.pivot - x - 1,
+
+    def __eq__(self, other):
+        return (isinstance(other, ConstPivotFlipGate) and
+                self.pivot == other.pivot)
+
+    def __hash__(self):
+        return hash((ConstPivotFlipGate, self.pivot))
 
     def __repr__(self):
         return 'ConstPivotFlipGate({})'.format(self.pivot)

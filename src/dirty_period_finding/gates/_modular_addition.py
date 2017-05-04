@@ -17,6 +17,13 @@ class ModularAdditionGate(BasicMathGateEx):
     def get_inverse(self):
         return ModularSubtractionGate(self.modulus)
 
+    def __eq__(self, other):
+        return (isinstance(other, ModularAdditionGate) and
+                self.modulus == other.modulus)
+
+    def __hash__(self):
+        return hash((ModularAdditionGate, self.modulus))
+
     def __repr__(self):
         return 'ModularAdditionGate(modulus={})'.format(self.modulus)
 
@@ -39,6 +46,13 @@ class ModularSubtractionGate(BasicMathGateEx):
 
     def get_inverse(self):
         return ModularAdditionGate(self.modulus)
+
+    def __eq__(self, other):
+        return (isinstance(other, ModularSubtractionGate) and
+                self.modulus == other.modulus)
+
+    def __hash__(self):
+        return hash((ModularSubtractionGate, self.modulus))
 
     def __repr__(self):
         return 'ModularSubtractionGate(modulus={})'.format(self.modulus)
@@ -70,3 +84,11 @@ class ModularOffsetGate(BasicMathGateEx):
 
     def __str__(self):
         return '+{} % {}'.format(self.offset, self.modulus)
+
+    def __eq__(self, other):
+        return (isinstance(other, ModularOffsetGate) and
+                self.modulus == other.modulus and
+                self.offset == other.offset)
+
+    def __hash__(self):
+        return hash((ModularAdditionGate, self.modulus, self.offset))

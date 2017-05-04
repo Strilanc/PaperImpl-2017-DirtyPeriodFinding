@@ -27,6 +27,13 @@ class ModularDoubleGate(BasicMathGateEx):
     def __str__(self):
         return '×2 % {}'.format(self.modulus)
 
+    def __eq__(self, other):
+        return (isinstance(other, ModularDoubleGate) and
+                self.modulus == other.modulus)
+
+    def __hash__(self):
+        return hash((ModularDoubleGate, self.modulus))
+
 
 class ModularUndoubleGate(BasicMathGateEx):
     def __init__(self, modulus):
@@ -48,3 +55,10 @@ class ModularUndoubleGate(BasicMathGateEx):
 
     def __str__(self):
         return '÷2 % {}'.format(self.modulus)
+
+    def __eq__(self, other):
+        return (isinstance(other, ModularUndoubleGate) and
+                self.modulus == other.modulus)
+
+    def __hash__(self):
+        return hash((ModularUndoubleGate, self.modulus))

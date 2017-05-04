@@ -17,6 +17,12 @@ class IncrementGate(BasicMathGateEx):
     def __str__(self):
         return "Increment"
 
+    def __eq__(self, other):
+        return isinstance(other, IncrementGate)
+
+    def __hash__(self):
+        return hash(IncrementGate)
+
     def ascii_register_labels(self):
         return ['+1']
 
@@ -33,6 +39,12 @@ class DecrementGate(BasicMathGateEx):
 
     def __str__(self):
         return "Decrement"
+
+    def __eq__(self, other):
+        return isinstance(other, DecrementGate)
+
+    def __hash__(self):
+        return hash(DecrementGate)
 
     def ascii_register_labels(self):
         return ['−1']

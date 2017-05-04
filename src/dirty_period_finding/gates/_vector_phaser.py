@@ -94,6 +94,14 @@ class VectorPhaserGate(BasicGateEx):
             return self.base_str()
         return '{}**({})'.format(self.base_str(), self._exponent_repr())
 
+    def __eq__(self, other):
+        return (isinstance(other, VectorPhaserGate) and
+                np.array_equal(self.vector, other.vector) and
+                self.half_turns == other.half_turns)
+
+    def __hash__(self):
+        return hash((VectorPhaserGate, self.half_turns, tuple(self.vector)))
+
 
 class ZGate(VectorPhaserGate):
     def __init__(self, half_turns=1.0):
