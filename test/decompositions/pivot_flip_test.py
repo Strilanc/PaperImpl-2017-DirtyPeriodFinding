@@ -14,7 +14,8 @@ from dirty_period_finding.decompositions import (
     addition_rules,
     offset_rules,
     increment_rules,
-    multi_not_rules
+    multi_not_rules,
+    predict_overflow_rules,
 )
 from dirty_period_finding.extensions import (
     LimitedCapabilityEngine,
@@ -61,6 +62,7 @@ def test_toffoli_size_of_const_pivot_flip():
             swap2cnot,
             increment_rules,
             multi_not_rules,
+            predict_overflow_rules,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
     ])
@@ -72,7 +74,7 @@ def test_toffoli_size_of_const_pivot_flip():
     ConstPivotFlipGate(offset) & controls | target
 
     assert dirty is not None
-    assert 25000 < len(rec.received_commands) < 50000
+    assert 10000 < len(rec.received_commands) < 20000
 
 
 def test_check_const_pivot_flip_permutations_small():

@@ -16,6 +16,7 @@ from dirty_period_finding.decompositions import (
     addition_rules,
     increment_rules,
     multi_not_rules,
+    predict_overflow_rules,
 )
 from dirty_period_finding.extensions import (
     LimitedCapabilityEngine,
@@ -39,6 +40,7 @@ def test_toffoli_size_of_modular_addition():
             increment_rules,
             multi_not_rules,
             modular_addition_rules,
+            predict_overflow_rules,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
     ])
@@ -63,6 +65,7 @@ def test_toffoli_size_of_modular_offset():
             increment_rules,
             multi_not_rules,
             modular_addition_rules,
+            predict_overflow_rules,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
     ])
@@ -75,7 +78,7 @@ def test_toffoli_size_of_modular_offset():
     ModularOffsetGate(offset, modulus) & controls | target
 
     assert dirty is not None
-    assert 25000 < len(rec.received_commands) < 50000
+    assert 15000 < len(rec.received_commands) < 30000
 
 
 def test_check_modular_offset_permutations_small():

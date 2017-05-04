@@ -14,6 +14,7 @@ from dirty_period_finding.gates import (
     OffsetGate,
     PivotFlipGate,
     Subtract,
+    LessThanConstantGate,
 )
 
 
@@ -53,8 +54,7 @@ def do_const_pivot_flip(gate, target_reg, controls, dirty_qubit):
     """
     for _ in range(2):
         # Compare.
-        OffsetGate(-gate.pivot) | target_reg + [dirty_qubit]
-        OffsetGate(gate.pivot) | target_reg
+        LessThanConstantGate(gate.pivot) | (target_reg, dirty_qubit)
 
         # Conditioned double flip.
         OffsetGate(-gate.pivot) & dirty_qubit & controls | target_reg

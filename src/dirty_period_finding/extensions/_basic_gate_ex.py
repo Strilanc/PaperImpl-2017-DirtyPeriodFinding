@@ -22,9 +22,14 @@ class BasicGateEx(BasicGate):
         assert all(e is eng for e in engines)
         return Command(eng, self, qubits)
 
+    def sanity_check(self, registers):
+        pass
+
     def __or__(self, qubits):
         if sum(len(reg) for reg in self.make_tuple_of_qureg(qubits)) == 0:
             return
+        qubits = self.make_tuple_of_qureg(qubits)
+        self.sanity_check(qubits)
         BasicGate.__or__(self, qubits)
 
 

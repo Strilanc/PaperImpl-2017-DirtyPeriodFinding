@@ -10,6 +10,10 @@ from ._multi_not import MultiNot, MultiNotGate
 from ._offset import OffsetGate
 from ._phase_gradient import PhaseGradientGate, PhaseGradient
 from ._pivot_flip import PivotFlipGate, ConstPivotFlipGate, PivotFlip
+from ._predict_overflow import (
+    PredictOffsetOverflowGate,
+    LessThanConstantGate,
+)
 from ._reverse_bits import ReverseBitsGate, ReverseBits
 from ._rotate_bits import RotateBitsGate, LeftRotateBits, RightRotateBits
 from ._vector_phaser import VectorPhaserGate, X, Z, XGate, ZGate

@@ -20,6 +20,7 @@ from dirty_period_finding.decompositions import (
     modular_double_rules,
     rotate_bits_rules,
     reverse_bits_rules,
+    predict_overflow_rules,
 )
 from dirty_period_finding.extensions import (
     LimitedCapabilityEngine,
@@ -44,6 +45,7 @@ def test_toffoli_size_of_scaled_modular_addition():
             increment_rules,
             multi_not_rules,
             modular_addition_rules,
+            predict_overflow_rules,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
     ])
@@ -55,7 +57,7 @@ def test_toffoli_size_of_scaled_modular_addition():
 
     ModularScaledAdditionGate(factor, modulus) & controls | (target1, target2)
 
-    assert 100000 < len(rec.received_commands) < 300000
+    assert 50000 < len(rec.received_commands) < 150000
 
 
 def test_check_scaled_modular_addition_permutations_small():

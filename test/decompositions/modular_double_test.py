@@ -18,6 +18,7 @@ from dirty_period_finding.decompositions import (
     offset_rules,
     rotate_bits_rules,
     reverse_bits_rules,
+    predict_overflow_rules,
 )
 from dirty_period_finding.extensions import (
     LimitedCapabilityEngine,
@@ -43,6 +44,7 @@ def test_toffoli_size_of_modular_double():
             multi_not_rules,
             rotate_bits_rules,
             reverse_bits_rules,
+            predict_overflow_rules,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
     ])
@@ -54,7 +56,7 @@ def test_toffoli_size_of_modular_double():
     ModularDoubleGate(modulus) & controls | target
 
     assert dirty is not None
-    assert 10000 < len(rec.received_commands) < 20000
+    assert 5000 < len(rec.received_commands) < 10000
 
 
 def test_check_modular_double_permutations_small():

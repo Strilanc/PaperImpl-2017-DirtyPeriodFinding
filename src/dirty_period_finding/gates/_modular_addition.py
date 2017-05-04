@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from projectq.ops import NotMergeable
-
 from dirty_period_finding.extensions import BasicMathGateEx
 
 

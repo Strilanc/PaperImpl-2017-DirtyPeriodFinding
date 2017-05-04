@@ -18,6 +18,7 @@ from dirty_period_finding.decompositions import (
     modular_double_rules,
     rotate_bits_rules,
     reverse_bits_rules,
+    predict_overflow_rules,
 )
 from dirty_period_finding.decompositions.modular_bimultiplication_rules \
     import do_bimultiplication
@@ -69,6 +70,7 @@ def test_toffoli_size_of_bimultiplication():
             modular_double_rules,
             rotate_bits_rules,
             reverse_bits_rules,
+            predict_overflow_rules,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
     ])
@@ -81,7 +83,7 @@ def test_toffoli_size_of_bimultiplication():
 
     ModularBimultiplicationGate(factor, modulus) & controls | (t1, t2)
 
-    assert 50000 < len(rec.received_commands) < 100000
+    assert 30000 < len(rec.received_commands) < 60000
 
 
 def test_fuzz_bimultiplication():

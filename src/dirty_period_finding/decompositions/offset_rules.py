@@ -15,9 +15,9 @@ from dirty_period_finding.gates import (
     Decrement,
     Increment,
     OffsetGate,
-    MultiNot
+    MultiNot,
+    PredictOffsetOverflowGate,
 )
-from dirty_period_finding.gates import X
 
 
 def estimate_cost_of_bitrange_offset(offset, bit_count):
@@ -61,137 +61,6 @@ def do_bitrange_offset(offset, target_reg):
     return ops
 
 
-def do_predict_carry_signals(offset_bits, query_reg, target_reg):
-    """
-    Source:
-        Thomas Häner, Martin Roetteler, and Krysta M. Svore, 2016.
-        "Factoring using 2n+2 qubits with Toffoli based modular multiplication"
-    Diagram:
-        . ═══●═════════════════●═════════════════●══════
-        .    │                 │                 │
-        o ═══╪●════════════════╪●════════════════╪●═════
-        f    ││                ││                ││
-        f ═══╪╪●═══════════════╪╪●═══════════════╪╪●════
-        s    │││               │││               │││
-        e ═══╪╪╪●══════════════╪╪╪●══════════════╪╪╪●═══
-        t    ││││              ││││              ││││
-        . ═══╪╪╪╪●═════════════╪╪╪╪●═════════════╪╪╪╪●══
-             │││││             │││││             │││││
-             │││││             │││││             │││││
-             │││││             │││││             │││││
-        . ───⊕┼┼┼┼─────────────●┼┼┼┼─────────────⊕┼┼┼┼──
-        .     ││││             │││││              ││││
-        q ────⊕┼┼┼────────●────┼●┼┼┼────●─────────⊕┼┼┼──
-        u      │││        │    │││││    │          │││
-        e ─────⊕┼┼──────●─┼────┼┼●┼┼────┼─●────────⊕┼┼──
-        r       ││      │ │    │││││    │ │         ││
-        y ──────⊕┼────●─┼─┼────┼┼┼●┼────┼─┼─●───────⊕┼──
-        .        │    │ │ │    │││││    │ │ │        │
-        . ───────⊕──●─┼─┼─┼────┼┼┼┼●────┼─┼─┼─●──────⊕──
-                    │ │ │ │    │││││    │ │ │ │
-                    │ │ │ │    │││││    │ │ │ │
-                    │ │ │ │    │││││    │ │ │ │
-        . ──────────┼─┼─┼─●────⊕┼┼┼┼────●─┼─┼─┼─────────
-        t           │ │ │ │     ││││    │ │ │ │
-        a ──────────┼─┼─●─⊕─────⊕┼┼┼────⊕─●─┼─┼─────────
-        r           │ │ │        │││      │ │ │
-        g ──────────┼─●─⊕────────⊕┼┼──────⊕─●─┼─────────
-        e           │ │           ││        │ │
-        t ──────────●─⊕───────────⊕┼────────⊕─●─────────
-        .           │              │          │
-        . ──────────⊕──────────────⊕──────────⊕─────────
-    Args:
-        offset_bits (list[bool]):
-        query_reg (projectq.types.Qureg):
-        target_reg (projectq.types.Qureg):
-    """
-    n = len(offset_bits)
-    target_ons = [query_reg[i] for i in range(n) if offset_bits[i]]
-
-    MultiNot | target_ons
-
-    # Sweep high-to-low.
-    for i in range(1, n)[::-1]:
-        X & query_reg[i] & target_reg[i - 1] | target_reg[i]
-
-    # Twiddle target.
-    for i in range(n):
-        if offset_bits[i]:
-            X | query_reg[i]
-            X & query_reg[i] | target_reg[i]
-            X | query_reg[i]
-
-    # Sweep low-to-high.
-    for i in range(1, n):
-        X & query_reg[i] & target_reg[i - 1] | target_reg[i]
-
-    MultiNot | target_ons
-
-
-def do_predict_overflow(offset, query_reg, target_bit, controls, dirty_reg):
-    """
-    N: len(query_reg)
-    C: len(controls)
-    Size: O(N + C)
-    Depth: O(N + C)
-    Dirty workspace: N-1
-    Diagram:
-                  c
-        control ━━/━━━●━━━━━━━━━━━━━●━━━━━━━━━━━━●━━━
-                      │             │            │
-                 n-1  │  ┌──────┐   │  ┌──────┐  │
-         offset ══/═══╪══╡offset╞═══╪══╡offset╞══╪═══
-                      │  └──┬───┘   │  └──┬───┘  │
-                ──────●─────┼──────●┼●────┼─────●┼●──
-                      │     │      │││    │     │││
-                 n-1  │  ┌──┴───┐  │││ ┌──┴───┐ │││
-          query ━━/━━━┿━━┥query ┝━━┿┿┿━┥query ┝━┿┿┿━━
-                      │  └──┬───┘  │││ └──┬───┘ │││
-                ──────●─────┼──────⊕●⊕────┼─────⊕●⊕──
-                      │     │       │     │      │
-                 n-2  │  ┌──┴───┐   │  ┌──┴───┐  │
-          dirty ━━/━━━┿━━┥⊕carry┝━━━┿━━┥⊕carry┝━━┿━━━
-                ──────┼──┤ sigs ├───●──┤ sigs ├──●───
-                      │  └──────┘   │  └──────┘  │
-         target ──────⊕─────────────⊕────────────⊕───
-
-    Source:
-        Thomas Häner, Martin Roetteler, and Krysta M. Svore, 2016.
-        "Factoring using 2n+2 qubits with Toffoli based modular multiplication"
-    Args:
-        offset (int):
-            The amount to pretend to add into the query register, to see if
-            an overflow occurs.
-        query_reg (projectq.types.Qureg):
-            The register that we want to know if it will overflow.
-        target_bit (projectq.types.Qubit):
-            The bit to toggle if the register will overflow when offset.
-        controls (list[projectq.types.Qubit]):
-            Conditions the operation.
-        dirty_reg (projectq.types.Qureg):
-            Workspace register with one less qubit than the query register.
-    """
-    n = len(query_reg)
-    assert len(dirty_reg) == n - 1
-
-    offset_bits = [bool((offset >> i) & 1) for i in range(n)]
-
-    if offset_bits[-1]:
-        X & controls & query_reg[-1] | target_bit
-
-    if n == 1:
-        return
-
-    for _ in range(2):
-        do_predict_carry_signals(offset_bits[:-1], query_reg[:-1], dirty_reg)
-
-        if offset_bits[-1]:
-            X | query_reg[-1]
-        X & controls & query_reg[-1] & dirty_reg[-1] | target_bit
-        if offset_bits[-1]:
-            X | query_reg[-1]
-
-
 def do_recursive_offset(gate, target_reg, dirty_qubit, controls):
     """
     N: len(target_reg)
@@ -227,19 +96,19 @@ def do_recursive_offset(gate, target_reg, dirty_qubit, controls):
     h = len(target_reg) // 2
     low = target_reg[:h]
     high = target_reg[h:]
+    mask = (~0 << h)
+    low_offset = offset & ~mask
+    high_offset = (offset & mask) >> h
 
     # Increment high part based on predicted carry signal from low part.
     Increment & dirty_qubit | high
     MultiNot & dirty_qubit | high
-    do_predict_overflow(offset, low, dirty_qubit, controls, high[:h-1])
+    PredictOffsetOverflowGate(low_offset) & controls | (low, dirty_qubit)
     Increment & dirty_qubit | high
-    do_predict_overflow(offset, low, dirty_qubit, controls, high[:h-1])
+    PredictOffsetOverflowGate(low_offset) & controls | (low, dirty_qubit)
     MultiNot & dirty_qubit | high
 
     # Separately recurse on low and high parts.
-    mask = (~0 << h)
-    low_offset = offset & ~mask
-    high_offset = (offset & mask) >> h
     OffsetGate(low_offset) & controls | low
     OffsetGate(high_offset) & controls | high
 
