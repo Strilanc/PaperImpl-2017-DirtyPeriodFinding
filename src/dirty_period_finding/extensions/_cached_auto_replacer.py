@@ -5,7 +5,7 @@ from projectq.cengines import (
     BasicEngine, DummyEngine, MainEngine, LocalOptimizer,
 )
 from projectq.cengines._replacer import NoGateDecompositionError
-from projectq.ops import get_inverse, FlushGate, X
+from projectq.ops import get_inverse, X, FlushGate
 from projectq.types import WeakQubitRef, Qureg
 
 from ._command_ex import CommandEx
@@ -24,7 +24,7 @@ class AutoReplacerEx(BasicEngine):
         self.merge_rules = merge_rules
 
     def is_available(self, cmd):
-        return (isinstance(cmd, FlushGate) or
+        return (isinstance(cmd.gate, FlushGate) or
                 self.is_last_engine or
                 self.next_engine.is_available(cmd))
 

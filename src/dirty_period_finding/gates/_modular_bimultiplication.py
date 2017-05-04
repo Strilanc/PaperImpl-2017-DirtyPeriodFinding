@@ -10,7 +10,7 @@ class ModularBimultiplicationGate(BasicMathGateEx):
     def __init__(self, factor, modulus):
         inverse_factor = multiplicative_inverse(factor, modulus)
         if inverse_factor is None:
-            raise ValueError("Irreversible.")
+            raise ValueError("Irreversible: *{} % {}.".format(factor, modulus))
 
         BasicMathGateEx.__init__(self)
         self.factor = factor
@@ -65,5 +65,6 @@ def extended_gcd(a, b):
 
 
 def multiplicative_inverse(a, m):
+    a %= m
     g, x, y = extended_gcd(a, m)
     return None if g != 1 else x % m

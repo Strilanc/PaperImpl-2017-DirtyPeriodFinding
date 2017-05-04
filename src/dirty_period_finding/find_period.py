@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from __future__ import print_function
 
 import math
 from fractions import Fraction
@@ -103,11 +104,13 @@ def main():
             pivot_flip_rules,
             reverse_bits_rules,
             rotate_bits_rules,
-            swap2cnot
+            swap2cnot,
+            predict_overflow_rules,
         ])),
         LimitedCapabilityEngine(
             allow_toffoli=True,
             allow_single_qubit_gates=True,
+            allow_classes=[]
         ),
         ctr
     ])
@@ -115,9 +118,9 @@ def main():
     m = 7 * 11
     n = int(math.ceil(math.log(m, 2)))
     sample_period(eng,
-                  factor=3,
+                  factor=5,
                   modulus=m,
-                  precision=1,
+                  precision=n*2,
                   phase_qubit=eng.allocate_qubit(),
                   work_qureg=eng.allocate_qureg(n),
                   ancilla_qureg=eng.allocate_qureg(n))
