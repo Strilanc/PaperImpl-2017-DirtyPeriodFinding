@@ -49,9 +49,11 @@ def test_exact_commands_for_small_circuit():
     assert backend.received_commands == [
         (MultiNot & c).generate_command(Qureg([y, x, a])),
         (X & c).generate_command(x),
-        (Swap & x).generate_command((a, c)),
+        (X & x & c).generate_command(a),
+        (X & x & a).generate_command(c),
         (X & c).generate_command(y),
-        (Swap & x).generate_command((a, c)),
+        (X & x & a).generate_command(c),
+        (X & x & c).generate_command(a),
         (X & a).generate_command(x),
         (MultiNot & c).generate_command(Qureg([a, x, y])),
     ]

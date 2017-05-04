@@ -57,7 +57,7 @@ def test_toffoli_size_of_scaled_modular_addition():
 
     ModularScaledAdditionGate(factor, modulus) & controls | (target1, target2)
 
-    assert 50000 < len(rec.received_commands) < 150000
+    assert 30000 < len(rec.received_commands) < 60000
 
 
 def test_check_scaled_modular_addition_permutations_small():

@@ -7,6 +7,8 @@ from dirty_period_finding.extensions import (
     min_workspace_vs_reg1,
     max_controls,
     workspace,
+    max_register_sizes,
+    max_workspace,
 )
 from dirty_period_finding.gates import (
     Add,
@@ -15,6 +17,11 @@ from dirty_period_finding.gates import (
     MultiNot,
     X
 )
+
+
+def do_naive_increment(target_reg, controls):
+    for i in range(len(target_reg))[::-1]:
+        X & controls & target_reg[:i] | target_reg[i]
 
 
 def do_increment_with_no_controls_and_n_dirty(target_reg, dirty_reg):
@@ -116,6 +123,14 @@ def do_increment_with_1_dirty(target_reg, dirty_qubit, controls):
 
 
 all_defined_decomposition_rules = [
+    # For small increments, the quadratic construction is shorter.
+    DecompositionRule(
+        gate_class=IncrementGate,
+        gate_recognizer=max_register_sizes(8) & max_controls(3),
+        gate_decomposer=lambda cmd: do_naive_increment(
+            target_reg=cmd.qubits[0],
+            controls=cmd.control_qubits)),
+
     # When there's lots of workspace, use double-subtract with inversion.
     DecompositionRule(
         gate_class=IncrementGate,

@@ -51,7 +51,7 @@ def test_toffoli_size_of_modular_addition():
 
     ModularAdditionGate(modulus) & controls | (target1, target2)
 
-    assert 15000 < len(rec.received_commands) < 30000
+    assert 10000 < len(rec.received_commands) < 15000
 
 
 def test_toffoli_size_of_modular_offset():
@@ -78,7 +78,7 @@ def test_toffoli_size_of_modular_offset():
     ModularOffsetGate(offset, modulus) & controls | target
 
     assert dirty is not None
-    assert 15000 < len(rec.received_commands) < 30000
+    assert 5000 < len(rec.received_commands) < 15000
 
 
 def test_check_modular_offset_permutations_small():

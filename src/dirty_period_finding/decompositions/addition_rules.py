@@ -81,14 +81,16 @@ def do_addition_with_same_size_and_no_controls(input_reg, target_reg):
     # (2) Ripple forward.
     for i in range(n - 1):
         X & carry_bit | target_reg[i]
-        Swap & target_reg[i] | (carry_bit, input_reg[i])
+        X & target_reg[i] & carry_bit | input_reg[i]
+        X & target_reg[i] & input_reg[i] | carry_bit
 
     # (3) High bit toggle.
     X & carry_bit | target_reg[-1]
 
     # (4) Ripple backward.
     for i in range(n - 1)[::-1]:
-        Swap & target_reg[i] | (carry_bit, input_reg[i])
+        X & target_reg[i] & input_reg[i] | carry_bit
+        X & target_reg[i] & carry_bit | input_reg[i]
         X & input_reg[i] | target_reg[i]
 
     # (5) Dirty MSB correction.
@@ -151,14 +153,16 @@ def do_addition_with_larger_target_and_no_controls(input_reg, target_reg):
     # (3) Ripple forward.
     for i in range(n - 1):
         X & carry_bit | target_reg[i]
-        Swap & target_reg[i] | (carry_bit, input_reg[i])
+        X & target_reg[i] & carry_bit | input_reg[i]
+        X & target_reg[i] & input_reg[i] | carry_bit
 
     # (4) Carry into high output bits.
     Increment & carry_bit | target_reg[n-1:]
 
     # (5) Ripple backward.
     for i in range(n - 1)[::-1]:
-        Swap & target_reg[i] | (carry_bit, input_reg[i])
+        X & target_reg[i] & input_reg[i] | carry_bit
+        X & target_reg[i] & carry_bit | input_reg[i]
         X & input_reg[i] | target_reg[i]
 
 
