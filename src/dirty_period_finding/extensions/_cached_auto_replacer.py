@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from projectq.cengines import BasicEngine, DummyEngine, MainEngine
+from projectq.cengines import (
+    BasicEngine, DummyEngine, MainEngine, LocalOptimizer,
+)
 from projectq.cengines._replacer import NoGateDecompositionError
-from projectq.ops import get_inverse, FlushGate
+from projectq.ops import get_inverse, FlushGate, X
 from projectq.types import WeakQubitRef, Qureg
 
 from ._command_ex import CommandEx
@@ -13,11 +15,13 @@ class AutoReplacerEx(BasicEngine):
     def __init__(self,
                  decomposition_rule_set,
                  decomposition_chooser=
-                     lambda cmd, decomposition_list: decomposition_list[0]):
+                 lambda cmd, decomposition_list: decomposition_list[0],
+                 merge_rules=()):
         BasicEngine.__init__(self)
         self._cached_results = dict()
         self.decomposition_rule_set = decomposition_rule_set
         self.decomposition_chooser = decomposition_chooser
+        self.merge_rules = merge_rules
 
     def is_available(self, cmd):
         return (isinstance(cmd, FlushGate) or
@@ -99,14 +103,19 @@ class AutoReplacerEx(BasicEngine):
         self._cached_results[key] = 'IN PROGRESS'
 
         rec = DummyEngine(save_commands=True)
-        eng = MainEngine(backend=rec, engine_list=[])
+        eng = MainEngine(backend=rec, engine_list=[
+            LocalOptimizer(),
+            SimpleAdjacentCombiner(self.merge_rules),
+        ])
         involved = eng.allocate_qureg(used)
         workspace = eng.allocate_qureg(avail)
+        eng.flush()
         rec.received_commands = []
         canonical_cmd.engine = eng
 
         self._pick_decomp_for(cmd).decompose(canonical_cmd)
-        intermediate_result = rec.received_commands
+        eng.flush()
+        intermediate_result = rec.received_commands[:-1]
 
         assert involved is not None
         assert workspace is not None
@@ -121,3 +130,72 @@ class AutoReplacerEx(BasicEngine):
     def receive(self, command_list):
         for cmd in command_list:
             self.send(self._recursive_decompose(cmd))
+
+
+class MergeRule(object):
+    def try_merge(self, cmd1, cmd2):
+        return None
+
+
+class InverseControlMergeRule(MergeRule):
+    def try_merge(self, cmd1, cmd2):
+        """
+        Args:
+            cmd1 (projectq.ops.Command):
+            cmd2 (projectq.ops.Command):
+
+        Returns:
+            None|list[projectq.ops.Command]:
+        """
+        for a, b in [(cmd1, cmd2), (cmd2, cmd1)]:
+            if len(a.control_qubits) != 1 or len(b.control_qubits) != 0:
+                continue
+            if sum(len(q) for q in a.qubits) <= 2:
+                continue
+            if a.qubits != b.qubits or a.tags != b.tags:
+                continue
+            if a.gate != b.gate.get_inverse():
+                continue
+
+            x = CommandEx(engine=a.engine,
+                          gate=X,
+                          qubits=(a.control_qubits,),
+                          tags=a.tags)
+            return [x, a.get_inverse(), x]
+        return None
+
+
+class SimpleAdjacentCombiner(BasicEngine):
+    def __init__(self, rules):
+        BasicEngine.__init__(self)
+        self.rules = tuple(rules) + (InverseControlMergeRule(),)
+        self._last_command = None
+
+    def _process(self, cmd):
+        # Flush all commands when asked.
+        if isinstance(cmd.gate, FlushGate):
+            if self._last_command is None:
+                return [cmd]
+            p = [self._last_command, cmd]
+            self._last_command = None
+            return p
+
+        # Buffer commands.
+        if self._last_command is None:
+            self._last_command = cmd
+            return []
+
+        # See if any merge rule applies.
+        for rule in self.rules:
+            merged = rule.try_merge(self._last_command, cmd)
+            if merged is not None:
+                self._last_command = merged[-1] if merged else None
+                return merged[:-1]
+
+        p = self._last_command
+        self._last_command = cmd
+        return [p]
+
+    def receive(self, command_list):
+        for cmd in command_list:
+            self.send(self._process(cmd))

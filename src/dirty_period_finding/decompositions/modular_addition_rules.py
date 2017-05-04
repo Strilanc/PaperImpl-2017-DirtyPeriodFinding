@@ -9,7 +9,8 @@ from dirty_period_finding.gates import (
     ConstPivotFlipGate,
     PivotFlip,
     MultiNot,
-    OffsetGate
+    OffsetGate,
+    Subtract,
 )
 
 
@@ -26,10 +27,13 @@ def do_modular_offset(gate, target_reg, controls):
     n = len(target_reg)
     assert 1 << (n - 1) < gate.modulus <= 1 << n
 
-    for pivot in [gate.modulus - gate.offset,
-                  gate.modulus,
-                  gate.offset]:
-        ConstPivotFlipGate(pivot) & controls | target_reg
+    ConstPivotFlipGate(gate.modulus - gate.offset) & controls | target_reg
+
+    # It's fine if we also flip the half above the modulus.
+    OffsetGate(-gate.modulus) & controls | target_reg
+    MultiNot & controls | target_reg
+
+    ConstPivotFlipGate(gate.offset) & controls | target_reg
 
 
 def do_modular_addition(gate, input_reg, target_reg, controls):
@@ -52,7 +56,9 @@ def do_modular_addition(gate, input_reg, target_reg, controls):
     OffsetGate(gate.modulus + 1) & controls | input_reg
     PivotFlip | (input_reg, target_reg)
 
-    ConstPivotFlipGate(gate.modulus) & controls | target_reg
+    # It's fine if we also flip the half above the modulus.
+    OffsetGate(-gate.modulus) & controls | target_reg
+    MultiNot & controls | target_reg
 
     MultiNot & controls | input_reg
     OffsetGate(gate.modulus + 1) & controls | input_reg

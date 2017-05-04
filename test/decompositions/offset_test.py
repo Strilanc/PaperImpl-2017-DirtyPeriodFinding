@@ -11,6 +11,7 @@ from dirty_period_finding.decompositions import offset_rules, multi_not_rules
 from dirty_period_finding.decompositions.offset_rules import (
     do_predict_carry_signals,
     do_predict_overflow,
+    estimate_cost_of_bitrange_offset,
 )
 from dirty_period_finding.extensions import (
     LimitedCapabilityEngine,
@@ -34,6 +35,16 @@ def test_carry_signals():
     assert _carry_signals(0b101, 0b001) == 0b001
     assert _carry_signals(0b1000000, 0b1000000) == 0b1000000
     assert _carry_signals(0b1001000, 0b1000001) == 0b1000000
+
+
+def test_estimate_cost_of_bitrange_offset():
+    assert estimate_cost_of_bitrange_offset(0b11111111, 8) == 1
+    assert estimate_cost_of_bitrange_offset(0b01111111, 8) == 2
+    assert estimate_cost_of_bitrange_offset(0b11110111, 8) == 3
+    assert estimate_cost_of_bitrange_offset(0b11110000, 8) == 1
+    assert estimate_cost_of_bitrange_offset(0b01110000, 8) == 2
+    assert estimate_cost_of_bitrange_offset(0b11110001, 8) == 2
+    assert estimate_cost_of_bitrange_offset(0b10101001, 8) == 4
 
 
 def test_do_predict_carry_signals_small():

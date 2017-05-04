@@ -5,14 +5,60 @@ import math
 
 from projectq.cengines import DecompositionRule
 
-from dirty_period_finding.gates import X
 from dirty_period_finding.extensions import (
     min_workspace,
     min_controls,
     max_controls,
     workspace,
 )
-from dirty_period_finding.gates import Increment, OffsetGate, MultiNot
+from dirty_period_finding.gates import (
+    Decrement,
+    Increment,
+    OffsetGate,
+    MultiNot
+)
+from dirty_period_finding.gates import X
+
+
+def estimate_cost_of_bitrange_offset(offset, bit_count):
+    bits = [0] + [(offset >> i) & 1 for i in range(bit_count)]
+    cost = 0
+
+    for i in range(bit_count):
+        # An increase forces an increment.
+        if bits[i + 1] and not bits[i]:
+            cost += 1
+
+        # A hold followed by a decrease pairs a decrement to the increment.
+        if not bits[i + 1] and bits[i] and bits[i - 1]:
+            cost += 1
+
+    return cost
+
+
+def do_bitrange_offset(offset, target_reg):
+    n = len(target_reg)
+    bits = [(offset >> i) & 1 for i in range(n)]
+    ops = []
+
+    i = 0
+    while i < n:
+        if not bits[i]:
+            i += 1
+            continue
+
+        next_zero = i + 1
+        while next_zero < n and bits[next_zero]:
+            next_zero += 1
+
+        if next_zero == i + 1:
+            Increment | target_reg[i:]
+        else:
+            Decrement | target_reg[i:]
+            Increment | target_reg[next_zero:]
+
+        i = next_zero
+    return ops
 
 
 def do_predict_carry_signals(offset_bits, query_reg, target_reg):
@@ -229,6 +275,12 @@ def do_controlled_offset(gate, target_reg, dirty_qubit, controls):
     gate.get_inverse() | t
     MultiNot & controls | t
 
+
+def _better_to_use_bitrange_offset(cmd):
+    c = estimate_cost_of_bitrange_offset(cmd.gate.offset, len(cmd.qubits[0]))
+    return c <= 4
+
+
 all_defined_decomposition_rules = [
     # Separate the controlling from the offsetting.
     DecompositionRule(
@@ -239,6 +291,14 @@ all_defined_decomposition_rules = [
             target_reg=cmd.qubits[0],
             controls=cmd.control_qubits,
             dirty_qubit=workspace(cmd)[0])),
+
+    # For simple offsets, just use increments and decrements.
+    DecompositionRule(
+        gate_class=OffsetGate,
+        gate_recognizer=max_controls(0) & _better_to_use_bitrange_offset,
+        gate_decomposer=lambda cmd: do_bitrange_offset(
+            offset=cmd.gate.offset,
+            target_reg=cmd.qubits[0])),
 
     # Divide-and-conquer an uncontrolled offset.
     DecompositionRule(

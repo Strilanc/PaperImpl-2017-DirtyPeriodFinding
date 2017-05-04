@@ -65,7 +65,11 @@ class GateWithCurriedControls(BasicGateEx):
 
 
 class HGate(projectq.ops.HGate, BasicGateEx):
-    pass
+    def __eq__(self, other):
+        return isinstance(other, HGate)
+
+    def __hash__(self):
+        return hash(HGate)
 
 
 class SelfInverseGateEx(projectq.ops.SelfInverseGate, BasicGateEx):

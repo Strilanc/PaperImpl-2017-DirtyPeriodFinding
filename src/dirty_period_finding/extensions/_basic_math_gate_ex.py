@@ -39,4 +39,10 @@ class SwapGate(projectq.ops.SwapGate, BasicMathGateEx):
     def do_operation(self, a, b):
         return b, a
 
+    def __eq__(self, other):
+        return isinstance(other, SwapGate)
+
+    def __hash__(self):
+        return hash(SwapGate)
+
 Swap = SwapGate()

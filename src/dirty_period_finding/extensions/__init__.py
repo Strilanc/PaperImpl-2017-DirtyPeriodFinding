@@ -10,7 +10,7 @@ from ._basic_math_gate_ex import (
     Swap,
     SwapGate,
 )
-from ._cached_auto_replacer import AutoReplacerEx
+from ._cached_auto_replacer import AutoReplacerEx, MergeRule
 from ._classical_simulator import ClassicalSimulator
 from ._command_ex import CommandEx
 from ._command_predicates import (

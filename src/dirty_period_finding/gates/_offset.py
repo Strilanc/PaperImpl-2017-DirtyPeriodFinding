@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from projectq.ops import NotMergeable
+
 from dirty_period_finding.extensions import BasicMathGateEx
 
 
@@ -14,6 +16,11 @@ class OffsetGate(BasicMathGateEx):
 
     def get_inverse(self):
         return OffsetGate(-self.offset)
+
+    def get_merged(self, other):
+        if not isinstance(other, OffsetGate):
+            raise NotMergeable()
+        return OffsetGate(self.offset + other.offset)
 
     def __repr__(self):
         return 'OffsetGate({})'.format(self.offset)

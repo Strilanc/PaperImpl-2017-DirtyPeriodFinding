@@ -7,6 +7,7 @@ import math
 
 import numpy as np
 import projectq.ops
+from projectq.ops import NotMergeable
 
 from dirty_period_finding.extensions import BasicGateEx, BasicMathGateEx
 
@@ -34,7 +35,7 @@ class VectorPhaserGate(BasicGateEx):
     def __init__(self, vector, half_turns=1.0):
         BasicGateEx.__init__(self)
         self.vector = vector
-        self.half_turns = half_turns
+        self.half_turns = half_turns % 2
 
     @property
     def matrix(self):
@@ -56,11 +57,19 @@ class VectorPhaserGate(BasicGateEx):
 
     @abc.abstractmethod
     def base_str(self):
-        return self.__class__.__name__ + '???'
         raise NotImplementedError()
 
     def with_half_turns(self, turns):
         raise NotImplementedError()
+
+    def get_merged(self, other):
+        if (not isinstance(other, VectorPhaserGate) or
+                not np.array_equal(self.vector, other.vector)):
+            raise NotMergeable()
+        return self.with_half_turns(self.half_turns + other.half_turns)
+
+    def get_inverse(self):
+        return self.with_half_turns(-self.half_turns)
 
     def _exponent_str(self):
         if self.half_turns % 2 == 0:
@@ -109,9 +118,6 @@ class ZGate(VectorPhaserGate):
     def with_half_turns(self, half_turns):
         return ZGate(half_turns)
 
-    def get_inverse(self):
-        return self
-
     def base_str(self):
         return "Z"
 
@@ -135,9 +141,6 @@ class XGate(VectorPhaserGate, BasicMathGateEx, projectq.ops.XGate):
 
     def do_operation(self, r):
         return 1 if r == 0 else 0,
-
-    def get_inverse(self):
-        return self
 
     def with_half_turns(self, half_turns):
         return XGate(half_turns)

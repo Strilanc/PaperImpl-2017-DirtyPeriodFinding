@@ -14,6 +14,11 @@ class PivotFlipGate(BasicMathGateEx, SelfInverseGateEx):
             return pivot, x
         return pivot, pivot - x - 1
 
+    def get_merged(self, other):
+        if not isinstance(other, PivotFlipGate):
+            raise NotMergeable()
+        return RotateBitsGate(self.amount + other.amount)
+
     def __eq__(self, other):
         return isinstance(other, PivotFlipGate)
 

@@ -54,5 +54,5 @@ all_defined_decomposition_rules = [
         gate_decomposer=lambda cmd: do_phase_gradient(
             target_reg=cmd.qubits[0],
             controls=cmd.control_qubits,
-            factor=cmd.gate.factor)),
+            factor=cmd.gate.exponent)),
 ]

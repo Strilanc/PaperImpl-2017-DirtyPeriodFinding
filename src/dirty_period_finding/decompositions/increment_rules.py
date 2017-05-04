@@ -116,6 +116,7 @@ def do_increment_with_1_dirty(target_reg, dirty_qubit, controls):
 
 
 all_defined_decomposition_rules = [
+    # When there's lots of workspace, use double-subtract with inversion.
     DecompositionRule(
         gate_class=IncrementGate,
         gate_recognizer=max_controls(0) & min_workspace_vs_reg1(factor=1),
@@ -123,6 +124,7 @@ all_defined_decomposition_rules = [
             target_reg=cmd.qubits[0],
             dirty_reg=workspace(cmd))),
 
+    # When there's not a lot of workspace, do more complicated stuff.
     DecompositionRule(
         gate_class=IncrementGate,
         gate_recognizer=min_workspace(1),

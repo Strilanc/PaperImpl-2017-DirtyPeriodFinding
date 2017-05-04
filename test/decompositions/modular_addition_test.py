@@ -49,7 +49,7 @@ def test_toffoli_size_of_modular_addition():
 
     ModularAdditionGate(modulus) & controls | (target1, target2)
 
-    assert 25000 < len(rec.received_commands) < 50000
+    assert 15000 < len(rec.received_commands) < 30000
 
 
 def test_toffoli_size_of_modular_offset():

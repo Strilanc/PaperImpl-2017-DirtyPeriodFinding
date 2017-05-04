@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from projectq.ops import NotMergeable
+
 from dirty_period_finding.extensions import BasicMathGateEx
 
 
@@ -25,6 +27,13 @@ class ModularBimultiplicationGate(BasicMathGateEx):
         return ModularBimultiplicationGate(
             self.inverse_factor,
             self.modulus)
+
+    def get_merged(self, other):
+        if (not isinstance(other, ModularBimultiplicationGate) or
+                other.modulus != self.modulus):
+            raise NotMergeable()
+        return ModularBimultiplicationGate(self.factor * other.factor,
+                                           self.modulus)
 
     def __repr__(self):
         return 'ModularBimultiplicationGate({}, modulus={})'.format(

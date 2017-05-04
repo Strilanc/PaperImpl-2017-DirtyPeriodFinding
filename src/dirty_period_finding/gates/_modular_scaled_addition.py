@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from projectq.ops import NotMergeable
+
 from dirty_period_finding.extensions import BasicMathGateEx
 
 
@@ -19,6 +21,13 @@ class ModularScaledAdditionGate(BasicMathGateEx):
         return ModularScaledAdditionGate(
             -self.factor % self.modulus,
             self.modulus)
+
+    def get_merged(self, other):
+        if (not isinstance(other, ModularScaledAdditionGate) or
+                other.modulus != self.modulus):
+            raise NotMergeable()
+        return ModularScaledAdditionGate(self.factor * other.factor,
+                                         self.modulus)
 
     def __repr__(self):
         return 'ModularScaledAdditionGate({}, modulus={})'.format(

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from projectq.ops import NotMergeable
+
 from dirty_period_finding.extensions import BasicSizedMathGateEx
 
 
@@ -20,6 +22,11 @@ class RotateBitsGate(BasicSizedMathGateEx):
         m = ~0 << (n - r)
         high, low = v & m, v & ~m
         return (low << r) | (high >> (n - r)),
+
+    def get_merged(self, other):
+        if not isinstance(other, RotateBitsGate):
+            raise NotMergeable()
+        return RotateBitsGate(self.amount + other.amount)
 
     def __repr__(self):
         return "RotateBitsGate({})".format(repr(self.amount))
