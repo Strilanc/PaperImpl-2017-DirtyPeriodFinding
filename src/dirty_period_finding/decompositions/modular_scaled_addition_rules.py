@@ -48,7 +48,7 @@ def do_modular_scaled_addition(gate, input_reg, target_reg, controls):
     """
     n = len(input_reg)
     assert len(target_reg) == n
-    assert 1 << (n - 1) < gate.modulus <= 1 << n
+    assert 0 < gate.modulus <= 1 << n
 
     double = ModularDoubleGate(gate.modulus)
     halve = ModularUndoubleGate(gate.modulus)
@@ -63,12 +63,14 @@ def do_modular_scaled_addition(gate, input_reg, target_reg, controls):
         offset & controls & input_reg[i] | target_reg
 
 
+decompose_into_doubled_addition = DecompositionRule(
+    gate_class=ModularScaledAdditionGate,
+    gate_decomposer=lambda cmd: do_modular_scaled_addition(
+        cmd.gate,
+        input_reg=cmd.qubits[0],
+        target_reg=cmd.qubits[1],
+        controls=cmd.control_qubits))
+
 all_defined_decomposition_rules = [
-    DecompositionRule(
-        gate_class=ModularScaledAdditionGate,
-        gate_decomposer=lambda cmd: do_modular_scaled_addition(
-            cmd.gate,
-            input_reg=cmd.qubits[0],
-            target_reg=cmd.qubits[1],
-            controls=cmd.control_qubits)),
+    decompose_into_doubled_addition,
 ]

@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from projectq.ops import Command
-from projectq.types import Qureg
+from projectq.types import Qubit, Qureg
 from projectq.backends import ResourceCounter
 
 
@@ -76,3 +76,5 @@ Command.__repr__ = command_str
 Qureg.__str__ = qureg_str
 Qureg.__repr__ = qureg_str
 ResourceCounter._add_cmd = resource_ctr_add_cmd
+Qubit.__del__ = lambda x: None
+Qureg.__int__ = lambda x: sum(int(x[i]) << i for i in range(len(x)))

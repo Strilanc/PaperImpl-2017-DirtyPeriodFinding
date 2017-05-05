@@ -10,13 +10,16 @@ import random
 import numpy as np
 from projectq import MainEngine
 from projectq.backends import Simulator
-from projectq.cengines import DummyEngine
+from projectq.cengines import DummyEngine, DecompositionRuleSet
 from projectq.ops import H, All, Rz, Measure
 
 from dirty_period_finding.extensions import (
     ClassicalSimulator,
     PermutationSimulator,
     commands_to_ascii_circuit,
+    AutoReplacerEx,
+    LimitedCapabilityEngine,
+    CommandEx,
 )
 from dirty_period_finding.gates import X
 
@@ -36,7 +39,7 @@ def check_phase_circuit(register_sizes,
 
     sim = Simulator()
     rec = DummyEngine(save_commands=True)
-    eng = MainEngine(backend=sim, engine_list=engine_list + [rec])
+    eng = MainEngine(backend=sim, engine_list=list(engine_list) + [rec])
     registers = [eng.allocate_qureg(size) for size in register_sizes]
 
     # Simulate all.
@@ -78,8 +81,8 @@ def check_phase_circuit(register_sizes,
 
 def check_permutation_circuit(register_sizes,
                               permutation,
-                              engine_list,
                               actions,
+                              engine_list=(),
                               register_limits=None):
     """
     Args:
@@ -94,7 +97,7 @@ def check_permutation_circuit(register_sizes,
 
     sim = PermutationSimulator()
     rec = DummyEngine(save_commands=True)
-    eng = MainEngine(backend=sim, engine_list=engine_list + [rec])
+    eng = MainEngine(backend=sim, engine_list=list(engine_list) + [rec])
     registers = [eng.allocate_qureg(size) for size in register_sizes]
 
     # Simulate.
@@ -150,19 +153,19 @@ def bit_to_state_permutation(bit_permutation):
 
 def check_quantum_permutation_circuit(register_size,
                                       permutation_func,
-                                      engine_list,
-                                      actions):
+                                      actions,
+                                      engine_list=()):
     """
     Args:
         register_size (int):
         permutation_func (function(register_sizes: tuple[int],
                                    register_vals: tuple[int]) : tuple[int]):
-        engine_list (list[projectq.cengines.BasicEngine]):
         actions (function(eng: MainEngine, registers: list[Qureg])):
+        engine_list (list[projectq.cengines.BasicEngine]):
     """
     sim = Simulator()
     rec = DummyEngine(save_commands=True)
-    eng = MainEngine(backend=sim, engine_list=engine_list + [rec])
+    eng = MainEngine(backend=sim, engine_list=list(engine_list) + [rec])
 
     reg = eng.allocate_qureg(register_size)
 
@@ -196,8 +199,8 @@ def check_quantum_permutation_circuit(register_size,
 
 def fuzz_permutation_circuit(register_sizes,
                              permutation,
-                             engine_list,
                              actions,
+                             engine_list=(),
                              register_limits=None):
     """
     Args:
@@ -205,23 +208,23 @@ def fuzz_permutation_circuit(register_sizes,
         permutation (function(register_vals: tuple[int],
                                         register_sizes: tuple[int])
                                         : tuple[int]):
-        engine_list (list[projectq.cengines.BasicEngine]):
         actions (function(eng: MainEngine, registers: list[Qureg])):
+        engine_list (list[projectq.cengines.BasicEngine]):
         register_limits (list[int]):
     """
 
     n = len(register_sizes)
     if register_limits is None:
         register_limits = [1 << size for size in register_sizes]
-    inputs = [random.randint(0, limit - 1) for limit in register_limits]
+    inputs = tuple(random.randint(0, limit - 1) for limit in register_limits)
     outputs = [e % (1 << d)
                for e, d in zip(permutation(register_sizes, inputs),
                                register_sizes)]
 
     sim = ClassicalSimulator()
     rec = DummyEngine(save_commands=True)
-    eng = MainEngine(backend=sim, engine_list=engine_list + [rec])
-    registers = [eng.allocate_qureg(size) for size in register_sizes]
+    eng = MainEngine(backend=sim, engine_list=list(engine_list) + [rec])
+    registers = tuple(eng.allocate_qureg(size) for size in register_sizes)
 
     # Encode inputs.
     for i in range(n):
@@ -243,3 +246,53 @@ def fuzz_permutation_circuit(register_sizes,
         print("Expected Outputs", outputs)
         print("Actual Outputs", actual_outputs)
     assert outputs == actual_outputs
+
+
+def cover(n, cut=10):
+    if n < cut:
+        return range(n)
+    return random.randint(0, n - 1),
+
+
+def check_permutation_decomposition(gate,
+                                    decomposition_rule,
+                                    register_sizes,
+                                    control_size=0,
+                                    register_limits=None):
+    """
+    Args:
+        gate (projectq.ops.BasicMathGate|
+              dirty_period_finding.extensions.BasicGateEx):
+        decomposition_rule (projectq.cengines.DecompositionRule):
+        register_sizes (list[int]):
+        control_size (int):
+        register_limits (list[int]):
+    """
+    assert isinstance(gate, decomposition_rule.gate_class)
+
+    if control_size + sum(register_sizes) <= 8:
+        test_method = check_permutation_circuit
+    else:
+        test_method = fuzz_permutation_circuit
+
+    def fake_regs(sizes):
+        return tuple([None]*i for i in sizes)
+
+    def apply_decomposition(eng, regs):
+        command = CommandEx(eng, gate, regs[1:], regs[0])
+        assert decomposition_rule.gate_recognizer(command)
+        decomposition_rule.gate_decomposer(command)
+
+    def apply_permutation(sizes, args):
+        if args[0] == ~(~0 << sizes[0]):
+            out = gate.get_math_function(fake_regs(sizes[1:]))(args[1:])
+            return tuple(args[:1]) + tuple(out)
+        return args
+
+    test_method(
+        register_sizes=[control_size] + register_sizes,
+        register_limits=(None
+                         if register_limits is None
+                         else [1 << control_size] + register_limits),
+        permutation=apply_permutation,
+        actions=apply_decomposition)

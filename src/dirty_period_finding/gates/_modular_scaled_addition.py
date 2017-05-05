@@ -8,6 +8,10 @@ from dirty_period_finding.extensions import BasicMathGateEx
 
 class ModularScaledAdditionGate(BasicMathGateEx):
     def __init__(self, factor, modulus):
+        if modulus <= 0:
+            raise ValueError("non-positive modulus: {}".format(modulus))
+        if modulus % 2 == 0:
+            raise NotImplementedError("even modulus: {}".format(modulus))
         BasicMathGateEx.__init__(self)
         self.factor = factor % modulus
         self.modulus = modulus
@@ -43,6 +47,11 @@ class ModularScaledAdditionGate(BasicMathGateEx):
 
     def __hash__(self):
         return hash((ModularScaledAdditionGate, self.modulus, self.factor))
+
+    def sanity_check(self, registers):
+        assert len(registers) == 2
+        assert len(registers[0]) == len(registers[1])
+        assert 1 << len(registers[0]) >= self.modulus
 
     def ascii_register_labels(self):
         return ['A', '+A·{} (mod {})'.format(self.factor, self.modulus)]

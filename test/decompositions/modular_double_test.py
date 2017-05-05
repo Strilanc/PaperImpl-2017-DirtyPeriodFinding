@@ -2,9 +2,6 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-import itertools
-import random
-
 from projectq import MainEngine
 from projectq.cengines import DecompositionRuleSet, DummyEngine
 from projectq.setups.decompositions import swap2cnot
@@ -20,6 +17,9 @@ from dirty_period_finding.decompositions import (
     reverse_bits_rules,
     predict_overflow_rules,
 )
+from dirty_period_finding.decompositions.modular_double_rules import (
+    decompose_into_align_and_rotate
+)
 from dirty_period_finding.extensions import (
     LimitedCapabilityEngine,
     AutoReplacerEx,
@@ -28,7 +28,10 @@ from dirty_period_finding.gates import (
     ModularDoubleGate,
     ModularUndoubleGate,
 )
-from .._test_util import fuzz_permutation_circuit, check_permutation_circuit
+from .._test_util import (
+    check_permutation_decomposition,
+    cover,
+)
 
 
 def test_toffoli_size_of_modular_double():
@@ -59,54 +62,33 @@ def test_toffoli_size_of_modular_double():
     assert 2000 < len(rec.received_commands) < 4000
 
 
-def test_check_modular_double_permutations_small():
-    for n, nc in itertools.product([2, 3, 4],
-                                   [0, 1]):
-        for modulus in range((1 << (n-1)) + 1, (1 << n) + 1)[::2]:
-            check_permutation_circuit(
-                register_sizes=[n, nc],
-                register_limits=[modulus, 1 << nc],
-                permutation=lambda _, (t, c):
-                    (t * 2 % modulus if c + 1 == 1 << nc else t, c),
-                engine_list=[
-                    AutoReplacerEx(DecompositionRuleSet(modules=[
-                        modular_double_rules,
-                    ])),
-                    LimitedCapabilityEngine(
-                        allow_all=True,
-                        ban_classes=[
-                            ModularDoubleGate,
-                            ModularUndoubleGate,
-                        ],
-                    ),
-                ],
-                actions=lambda eng, regs:
-                    ModularDoubleGate(modulus) & regs[1] | regs[0])
+def test_operation():
+    assert ModularDoubleGate(7).do_operation(0) == (0,)
+    assert ModularDoubleGate(7).do_operation(1) == (2,)
+    assert ModularDoubleGate(7).do_operation(2) == (4,)
+    assert ModularDoubleGate(7).do_operation(3) == (6,)
+    assert ModularDoubleGate(7).do_operation(4) == (1,)
+    assert ModularDoubleGate(7).do_operation(5) == (3,)
+    assert ModularDoubleGate(7).do_operation(6) == (5,)
+
+    assert ModularUndoubleGate(7).do_operation(0) == (0,)
+    assert ModularUndoubleGate(7).do_operation(2) == (1,)
+    assert ModularUndoubleGate(7).do_operation(4) == (2,)
+    assert ModularUndoubleGate(7).do_operation(6) == (3,)
+    assert ModularUndoubleGate(7).do_operation(1) == (4,)
+    assert ModularUndoubleGate(7).do_operation(3) == (5,)
+    assert ModularUndoubleGate(7).do_operation(5) == (6,)
 
 
-def test_fuzz_modular_double_permutations_large():
-    for _ in range(10):
-        n = random.randint(2, 50)
-        nc = random.randint(0, 2)
-        modulus = random.randint((1 << (n-1)) + 1, (1 << n) - 1)
-        if modulus % 2 == 0:
-            modulus += 1
-        fuzz_permutation_circuit(
-            register_sizes=[n, nc],
-            register_limits=[modulus, 1 << nc],
-            permutation=lambda _, (t, c):
-                (t * 2 % modulus if c + 1 == 1 << nc else t, c),
-            engine_list=[
-                AutoReplacerEx(DecompositionRuleSet(modules=[
-                    modular_double_rules,
-                ])),
-                LimitedCapabilityEngine(
-                    allow_all=True,
-                    ban_classes=[
-                        ModularDoubleGate,
-                        ModularUndoubleGate,
-                    ],
-                ),
-            ],
-            actions=lambda eng, regs:
-                ModularDoubleGate(modulus) & regs[1] | regs[0])
+def test_decompose_modular_double_into_align_and_rotate():
+    for register_size in range(50):
+        for control_size in range(3):
+            for h_modulus in cover((1 << register_size) // 2):
+                modulus = h_modulus*2 + 1
+
+                check_permutation_decomposition(
+                    decomposition_rule=decompose_into_align_and_rotate,
+                    gate=ModularDoubleGate(modulus),
+                    register_sizes=[register_size],
+                    control_size=control_size,
+                    register_limits=[modulus])

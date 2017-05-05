@@ -2,9 +2,6 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-import itertools
-import random
-
 from projectq import MainEngine
 from projectq.cengines import DummyEngine, DecompositionRuleSet
 from projectq.setups.decompositions import swap2cnot
@@ -22,12 +19,18 @@ from dirty_period_finding.decompositions import (
     reverse_bits_rules,
     predict_overflow_rules,
 )
+from dirty_period_finding.decompositions.modular_scaled_addition_rules import (
+    decompose_into_doubled_addition
+)
 from dirty_period_finding.extensions import (
     LimitedCapabilityEngine,
     AutoReplacerEx,
 )
 from dirty_period_finding.gates import ModularScaledAdditionGate
-from .._test_util import fuzz_permutation_circuit, check_permutation_circuit
+from .._test_util import (
+    check_permutation_decomposition,
+    cover,
+)
 
 
 def test_toffoli_size_of_scaled_modular_addition():
@@ -60,58 +63,21 @@ def test_toffoli_size_of_scaled_modular_addition():
     assert 30000 < len(rec.received_commands) < 60000
 
 
-def test_check_scaled_modular_addition_permutations_small():
-    for n, nc in itertools.product([2, 3],
-                                   [0, 1]):
-        for modulus in range((1 << (n-1)) + 1, (1 << n) + 1)[::2]:
-            for factor in range(0, modulus):
-                check_permutation_circuit(
-                    register_sizes=[n, n, nc],
-                    register_limits=[modulus, modulus, 1 << nc],
-                    permutation=lambda _, (a, t, c):
-                        (a,
-                         (t + a * factor) % modulus if c + 1 == 1 << nc else t,
-                         c),
-                    engine_list=[
-                        AutoReplacerEx(DecompositionRuleSet(modules=[
-                            modular_scaled_addition_rules,
-                        ])),
-                        LimitedCapabilityEngine(
-                            allow_all=True,
-                            ban_classes=[
-                                ModularScaledAdditionGate,
-                            ],
-                        ),
-                    ],
-                    actions=lambda eng, (a, t, c): ModularScaledAdditionGate(
-                        factor, modulus) & c | (a, t))
+def test_scaled_modular_addition_operation():
+    assert ModularScaledAdditionGate(3, 11).do_operation(5, 9) == (5, 2)
+    assert ModularScaledAdditionGate(-2, 11).do_operation(5, 9) == (5, 10)
 
 
-def test_fuzz_scaled_modular_addition_permutations_large():
-    for _ in range(10):
-        n = random.randint(2, 50)
-        nc = random.randint(0, 2)
-        modulus = random.randint((1 << (n - 1)) + 1, (1 << n) - 1)
-        modulus -= modulus % 2
-        modulus += 1
-        factor = random.randint(0, modulus - 1)
-        fuzz_permutation_circuit(
-            register_sizes=[n, n, nc],
-            register_limits=[modulus, modulus, 1 << nc],
-            permutation=lambda _, (a, t, c):
-                (a,
-                 (t + a * factor) % modulus if c + 1 == 1 << nc else t,
-                 c),
-            engine_list=[
-                AutoReplacerEx(DecompositionRuleSet(modules=[
-                    modular_scaled_addition_rules,
-                ])),
-                LimitedCapabilityEngine(
-                    allow_all=True,
-                    ban_classes=[
-                        ModularScaledAdditionGate,
-                    ],
-                ),
-            ],
-            actions=lambda eng, (a, t, c): ModularScaledAdditionGate(
-                factor, modulus) & c | (a, t))
+def test_decompose_scaled_modular_addition_into_doubled_addition():
+    for register_size in range(1, 50):
+        for control_size in range(3):
+            for h_modulus in cover(1 << (register_size - 1)):
+                modulus = h_modulus*2 + 1
+                for factor in cover(modulus):
+
+                    check_permutation_decomposition(
+                        decomposition_rule=decompose_into_doubled_addition,
+                        gate=ModularScaledAdditionGate(factor, modulus),
+                        register_sizes=[register_size, register_size],
+                        control_size=control_size,
+                        register_limits=[modulus, modulus])

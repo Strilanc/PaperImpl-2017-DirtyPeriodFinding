@@ -22,7 +22,7 @@ def do_modular_double(gate, target_reg, controls):
         controls (list[Qubit]):
             Control qubits.
     """
-    assert 1 << (len(target_reg) - 1) < gate.modulus <= 1 << len(target_reg)
+    assert 0 < gate.modulus <= 1 << len(target_reg)
 
     h = (gate.modulus + 1) // 2
 
@@ -32,11 +32,13 @@ def do_modular_double(gate, target_reg, controls):
     LeftRotateBits & controls | target_reg
 
 
+decompose_into_align_and_rotate = DecompositionRule(
+    gate_class=ModularDoubleGate,
+    gate_decomposer=lambda cmd: do_modular_double(
+        cmd.gate,
+        target_reg=cmd.qubits[0],
+        controls=cmd.control_qubits))
+
 all_defined_decomposition_rules = [
-    DecompositionRule(
-        gate_class=ModularDoubleGate,
-        gate_decomposer=lambda cmd: do_modular_double(
-            cmd.gate,
-            target_reg=cmd.qubits[0],
-            controls=cmd.control_qubits)),
+    decompose_into_align_and_rotate,
 ]
