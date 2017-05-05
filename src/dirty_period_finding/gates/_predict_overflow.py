@@ -72,4 +72,4 @@ class LessThanConstantGate(BasicSizedMathGateEx, SelfInverseGateEx):
         return repr(self)
 
     def ascii_register_labels(self):
-        return ['A', '⊕A<{})'.format(self.comparand)]
+        return ['A', '⊕A<{}'.format(self.comparand)]
