@@ -38,7 +38,7 @@ def do_bimultiplication(gate, forward_reg, inverse_reg, controls):
     """
     n = len(forward_reg)
     assert len(inverse_reg) == n
-    assert 1 << (n - 1) < gate.modulus <= 1 << n
+    assert 0 < gate.modulus <= 1 << n
 
     scale_add = ModularScaledAdditionGate(gate.factor, gate.modulus)
     scale_sub = ModularScaledAdditionGate(-gate.inverse_factor, gate.modulus)
@@ -50,12 +50,14 @@ def do_bimultiplication(gate, forward_reg, inverse_reg, controls):
     RotateBitsGate(n) & controls | forward_reg + inverse_reg
 
 
+decompose_into_adds_and_rotate = DecompositionRule(
+    gate_class=ModularBimultiplicationGate,
+    gate_decomposer=lambda cmd: do_bimultiplication(
+        cmd.gate,
+        forward_reg=cmd.qubits[0],
+        inverse_reg=cmd.qubits[1],
+        controls=cmd.control_qubits))
+
 all_defined_decomposition_rules = [
-    DecompositionRule(
-        gate_class=ModularBimultiplicationGate,
-        gate_decomposer=lambda cmd: do_bimultiplication(
-            cmd.gate,
-            forward_reg=cmd.qubits[0],
-            inverse_reg=cmd.qubits[1],
-            controls=cmd.control_qubits)),
+    decompose_into_adds_and_rotate,
 ]

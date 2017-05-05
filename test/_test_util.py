@@ -296,3 +296,39 @@ def check_permutation_decomposition(gate,
                          else [1 << control_size] + register_limits),
         permutation=apply_permutation,
         actions=apply_decomposition)
+
+
+def record_decomposition(gate,
+                         decomposition_rule,
+                         register_sizes,
+                         control_size=0):
+    """
+    Args:
+        gate (projectq.ops.BasicMathGate|
+              dirty_period_finding.extensions.BasicGateEx):
+        decomposition_rule (projectq.cengines.DecompositionRule):
+        register_sizes (list[int]):
+        control_size (int):
+    """
+    assert isinstance(gate, decomposition_rule.gate_class)
+
+    rec = DummyEngine(save_commands=True)
+    eng = MainEngine(backend=rec, engine_list=[])
+    regs = tuple(eng.allocate_qureg(size)
+                 for size in [control_size] + register_sizes)
+    rec.received_commands = []
+    command = CommandEx(eng, gate, regs[1:], regs[0])
+    assert decomposition_rule.gate_recognizer(command)
+    decomposition_rule.gate_decomposer(command)
+    return rec.received_commands
+
+
+def decomposition_to_ascii(gate,
+                           decomposition_rule,
+                           register_sizes,
+                           control_size=0):
+    return commands_to_ascii_circuit(record_decomposition(gate,
+                                                          decomposition_rule,
+                                                          register_sizes,
+                                                          control_size),
+                                     ascii_only=True)

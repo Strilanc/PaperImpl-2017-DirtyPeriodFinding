@@ -2,6 +2,8 @@
 from __future__ import division
 from __future__ import unicode_literals
 
+import fractions
+
 from projectq import MainEngine
 from projectq.cengines import DummyEngine, DecompositionRuleSet
 from projectq.setups.decompositions import swap2cnot
@@ -20,38 +22,21 @@ from dirty_period_finding.decompositions import (
     reverse_bits_rules,
     predict_overflow_rules,
 )
-from dirty_period_finding.decompositions.modular_bimultiplication_rules \
-    import do_bimultiplication
+from dirty_period_finding.decompositions.modular_bimultiplication_rules import (
+    decompose_into_adds_and_rotate,
+)
 from dirty_period_finding.extensions import (
     AutoReplacerEx,
     LimitedCapabilityEngine,
 )
 from dirty_period_finding.gates import (
     ModularBimultiplicationGate,
-    ModularScaledAdditionGate,
-    RotateBitsGate,
 )
-from .._test_util import fuzz_permutation_circuit
-
-
-def test_do_bimultiplication():
-    backend = DummyEngine(save_commands=True)
-    eng = MainEngine(backend=backend, engine_list=[])
-    a = eng.allocate_qureg(4)
-    b = eng.allocate_qureg(4)
-    c = eng.allocate_qureg(3)
-
-    backend.received_commands = []
-    do_bimultiplication(
-        ModularBimultiplicationGate(3, 13), a, b, c)
-
-    m = ModularScaledAdditionGate
-    assert backend.received_commands == [
-        (m(3, 13) & c).generate_command((a, b)),
-        (m(4, 13) & c).generate_command((b, a)),
-        (m(3, 13) & c).generate_command((a, b)),
-        (RotateBitsGate(4) & c).generate_command(a + b),
-    ]
+from .._test_util import (
+    decomposition_to_ascii,
+    cover,
+    check_permutation_decomposition,
+)
 
 
 def test_toffoli_size_of_bimultiplication():
@@ -86,29 +71,52 @@ def test_toffoli_size_of_bimultiplication():
     assert 5000 < len(rec.received_commands) < 15000
 
 
-def test_fuzz_bimultiplication():
-    for _ in range(10):
-        n = 10
-        cn = 1
-        mod = 1001
-        f = 5
-        inv_f = 801
-        assert f * inv_f % mod == 1
-        op = ModularBimultiplicationGate(5, mod)
-        fuzz_permutation_circuit(
-            register_sizes=[n, cn, n],
-            register_limits=[mod, 1 << cn, mod],
-            permutation=lambda ns, (a, c, b):
-                (a, c, b)
-                if c != 2**cn - 1
-                else (a*f % mod, c, b*-inv_f % mod),
-            engine_list=[
-                AutoReplacerEx(DecompositionRuleSet(modules=[
-                    modular_bimultiplication_rules,
-                ])),
-                LimitedCapabilityEngine(
-                    allow_all=True,
-                    ban_classes=[ModularBimultiplicationGate]
-                )
-            ],
-            actions=lambda eng, regs: op & regs[1] | (regs[0], regs[2]))
+def test_bimultiplication_operation():
+    assert ModularBimultiplicationGate(7, 13).do_operation(1, 1) == (7, 11)
+    assert ModularBimultiplicationGate(7, 13).do_operation(2, 3) == (1, 7)
+
+
+def test_decompose_scaled_modular_addition_into_doubled_addition():
+    for register_size in range(1, 100):
+        for control_size in range(3):
+            for h_modulus in cover(1 << (register_size - 1)):
+                modulus = h_modulus * 2 + 1
+                for factor in cover(modulus):
+                    if fractions.gcd(modulus, factor) != 1:
+                        continue
+
+                    check_permutation_decomposition(
+                        decomposition_rule=decompose_into_adds_and_rotate,
+                        gate=ModularBimultiplicationGate(factor, modulus),
+                        register_sizes=[register_size, register_size],
+                        control_size=control_size,
+                        register_limits=[modulus, modulus])
+
+
+def test_diagram_decompose_into_doubled_addition():
+    text_diagram = decomposition_to_ascii(
+        gate=ModularBimultiplicationGate(7, 13),
+        decomposition_rule=decompose_into_adds_and_rotate,
+        register_sizes=[4, 4],
+        control_size=1)
+    print(text_diagram)
+    assert text_diagram == """
+|0>--------@---------------@----------------@------------@------
+    .------|------. .------|-------. .------|------. .---|----.
+|0>-|             |-|              |-|             |-|        |-
+    |             | |              | |             | |        |
+|0>-|             |-|              |-|             |-|        |-
+    |             | |              | |             | |        |
+|0>-|      A      |-|  +A*11 % 13  |-|      A      |-|        |-
+    |             | |              | |             | |        |
+|0>-|             |-|              |-|             |-|        |-
+    |-------------| |--------------| |-------------| |        |
+|0>-|             |-|              |-|             |-|  <<<4  |-
+    |             | |              | |             | |        |
+|0>-|             |-|              |-|             |-|        |-
+    |             | |              | |             | |        |
+|0>-|  +A*7 % 13  |-|      A       |-|  +A*7 % 13  |-|        |-
+    |             | |              | |             | |        |
+|0>-|             |-|              |-|             |-|        |-
+    `-------------` `--------------` `-------------` `--------`
+    """.strip()

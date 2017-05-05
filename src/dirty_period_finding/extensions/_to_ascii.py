@@ -186,10 +186,11 @@ def _wire_col(cmd, id_to_index, index_to_id):
     return col
 
 
-def commands_to_ascii_circuit(commands):
+def commands_to_ascii_circuit(commands, ascii_only=False):
     """
     Args:
         commands (list[Command]): Commands making up the circuit.
+        ascii_only (bool):
     Returns:
         str:
             Fixed-width text drawing using ascii and unicode characters.
@@ -222,6 +223,26 @@ def commands_to_ascii_circuit(commands):
         cols.append(_wire_col(cmd, id_to_index, index_to_id))
         cols.append(empty_col)
 
-    return '\n'.join(''.join(col[row]
-                             for col in cols).rstrip()
-                     for row in range(len(empty_col))).rstrip()
+    rows = [''.join(col[row] for col in cols).rstrip()
+            for row in range(len(empty_col))]
+    result = '\n'.join(row for row in rows if row).rstrip()
+    if ascii_only:
+        result = (result
+                  .replace('─', '-')
+                  .replace('┐', '.')
+                  .replace('┌', '.')
+                  .replace('┘', '`')
+                  .replace('└', '`')
+                  .replace('┼', '|')
+                  .replace('│', '|')
+                  .replace('┬', '|')
+                  .replace('┴', '|')
+                  .replace('┤', '|')
+                  .replace('├', '|')
+                  .replace('•', '@')
+                  .replace('⊕', 'X')
+                  .replace('×', '*')
+                  .replace('·', '*')
+                  .replace('÷', '/')
+                  .replace('⟩', '>'))
+    return result

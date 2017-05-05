@@ -31,6 +31,7 @@ from dirty_period_finding.gates import (
 from .._test_util import (
     check_permutation_decomposition,
     cover,
+    decomposition_to_ascii,
 )
 
 
@@ -84,7 +85,7 @@ def test_decompose_modular_double_into_align_and_rotate():
     for register_size in range(50):
         for control_size in range(3):
             for h_modulus in cover((1 << register_size) // 2):
-                modulus = h_modulus*2 + 1
+                modulus = h_modulus * 2 + 1
 
                 check_permutation_decomposition(
                     decomposition_rule=decompose_into_align_and_rotate,
@@ -92,3 +93,26 @@ def test_decompose_modular_double_into_align_and_rotate():
                     register_sizes=[register_size],
                     control_size=control_size,
                     register_limits=[modulus])
+
+
+def test_diagram_decompose_into_align_and_rotate():
+    text_diagram = decomposition_to_ascii(
+        gate=ModularDoubleGate(27),
+        decomposition_rule=decompose_into_align_and_rotate,
+        register_sizes=[5],
+        control_size=1)
+    print(text_diagram)
+    assert text_diagram == """
+|0>-----@---------@-----@-----@------
+    .---|---. .---|---. | .---|----.
+|0>-|       |-|       |-|-|        |-
+    |       | |       | | |        |
+|0>-|       |-|       |-|-|        |-
+    |       | |       | | |        |
+|0>-|  -14  |-|  +14  |-|-|  <<<1  |-
+    |       | |       | | |        |
+|0>-|       |-|       |-|-|        |-
+    |       | `---|---` | |        |
+|0>-|       |-----@-----X-|        |-
+    `-------`             `--------`
+    """.strip()

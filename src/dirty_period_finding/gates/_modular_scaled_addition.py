@@ -54,7 +54,7 @@ class ModularScaledAdditionGate(BasicMathGateEx):
         assert 1 << len(registers[0]) >= self.modulus
 
     def ascii_register_labels(self):
-        return ['A', '+A·{} (mod {})'.format(self.factor, self.modulus)]
+        return ['A', '+A·{} % {}'.format(self.factor, self.modulus)]
 
 
 def _extended_gcd(a, b):

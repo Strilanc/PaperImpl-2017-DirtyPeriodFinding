@@ -30,6 +30,7 @@ from dirty_period_finding.gates import ModularScaledAdditionGate
 from .._test_util import (
     check_permutation_decomposition,
     cover,
+    decomposition_to_ascii,
 )
 
 
@@ -72,7 +73,7 @@ def test_decompose_scaled_modular_addition_into_doubled_addition():
     for register_size in range(1, 50):
         for control_size in range(3):
             for h_modulus in cover(1 << (register_size - 1)):
-                modulus = h_modulus*2 + 1
+                modulus = h_modulus * 2 + 1
                 for factor in cover(modulus):
 
                     check_permutation_decomposition(
@@ -81,3 +82,32 @@ def test_decompose_scaled_modular_addition_into_doubled_addition():
                         register_sizes=[register_size, register_size],
                         control_size=control_size,
                         register_limits=[modulus, modulus])
+
+
+def test_diagram_decompose_into_doubled_addition():
+    text_diagram = decomposition_to_ascii(
+        gate=ModularScaledAdditionGate(7, 13),
+        decomposition_rule=decompose_into_doubled_addition,
+        register_sizes=[4, 4],
+        control_size=1)
+    print(text_diagram)
+    assert text_diagram == """
+|0>-------------------------------------------------@---------------------------@---------------------------@---------------------------@-------
+                                                    |                           |                           |                           |
+|0>-------------------------------------------------|---------------------------|---------------------------|---------------------------@-------
+                                                    |                           |                           |                           |
+|0>-------------------------------------------------|---------------------------|---------------------------@---------------------------|-------
+                                                    |                           |                           |                           |
+|0>-------------------------------------------------|---------------------------@---------------------------|---------------------------|-------
+                                                    |                           |                           |                           |
+|0>-------------------------------------------------@---------------------------|---------------------------|---------------------------|-------
+    .-----------. .-----------. .-----------. .-----|-----. .-----------. .-----|-----. .-----------. .-----|-----. .-----------. .-----|-----.
+|0>-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-
+    |           | |           | |           | |           | |           | |           | |           | |           | |           | |           |
+|0>-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-
+    |           | |           | |           | |           | |           | |           | |           | |           | |           | |           |
+|0>-|  /2 % 13  |-|  /2 % 13  |-|  /2 % 13  |-|  +7 % 13  |-|  *2 % 13  |-|  +7 % 13  |-|  *2 % 13  |-|  +7 % 13  |-|  *2 % 13  |-|  +7 % 13  |-
+    |           | |           | |           | |           | |           | |           | |           | |           | |           | |           |
+|0>-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-
+    `-----------` `-----------` `-----------` `-----------` `-----------` `-----------` `-----------` `-----------` `-----------` `-----------`
+    """.strip()
