@@ -3,10 +3,11 @@ from __future__ import unicode_literals
 from __future__ import print_function
 
 import math
+import random
 from fractions import Fraction
 
 from projectq import MainEngine
-from projectq.backends import Simulator, ResourceCounter
+from projectq.backends import Simulator
 from projectq.cengines import DecompositionRuleSet
 from projectq.ops import Measure
 from projectq.setups.decompositions import swap2cnot
@@ -21,16 +22,8 @@ from dirty_period_finding.extensions import (
 from dirty_period_finding.gates import *
 
 
-def measure_qureg(qureg):
-    if len(qureg) == 0:
-        return 0
-    Measure | qureg
-    qureg[0].engine.flush()
-    return sum(1 << i if bool(qureg[i]) else 0 for i in range(len(qureg)))
-
-
 def sample_period(eng,
-                  factor,
+                  base,
                   modulus,
                   precision,
                   phase_qubit,
@@ -39,7 +32,7 @@ def sample_period(eng,
     """
     Args:
         eng (projectq.cengines.MainEngine):
-        factor (int):
+        base (int):
         modulus (int):
         precision (int):
             The number of iterations.
@@ -55,12 +48,13 @@ def sample_period(eng,
         int:
             A number related to the period.
     """
+
     # Incremental phase estimation.
     X | work_qureg[0]
     frac = Fraction(0, 1)
     for i in range(precision):
         rev_i = precision - i - 1
-        op = ModularBimultiplicationGate(pow(factor, 1 << rev_i, modulus),
+        op = ModularBimultiplicationGate(pow(base, 1 << rev_i, modulus),
                                          modulus)
 
         H | phase_qubit
@@ -74,14 +68,17 @@ def sample_period(eng,
         if b:
             X | phase_qubit
             frac += Fraction(1, 2 << i)
-        print("done iter", i, b, frac)
+        print("done iter",
+              i,
+              b,
+              frac,
+              frac.limit_denominator(modulus - 1).denominator)
 
-    # Fix work register.
+    # Fix ancilla register using factor in work register.
     Measure | work_qureg
     eng.flush()
-    total_factor = measure_qureg(work_qureg)
-    fixup_gate = ModularBimultiplicationGate(total_factor * -(-1)**precision,
-                                             modulus).get_inverse()
+    fixup_factor = int(work_qureg) * (-1)**precision
+    fixup_gate = ModularBimultiplicationGate(fixup_factor, modulus)
     fixup_gate | (ancilla_qureg, work_qureg)
 
     # Estimate period based on denominator of closest fraction.
@@ -90,7 +87,6 @@ def sample_period(eng,
 
 def main():
     sim = Simulator()
-    ctr = ResourceCounter()
     eng = MainEngine(backend=sim, engine_list=[
         AutoReplacerEx(DecompositionRuleSet(modules=[
             addition_rules,
@@ -112,19 +108,38 @@ def main():
             allow_single_qubit_gates=True,
             allow_classes=[]
         ),
-        ctr
     ])
 
-    m = 7 * 11
-    n = int(math.ceil(math.log(m, 2)))
-    sample_period(eng,
-                  factor=5,
-                  modulus=m,
-                  precision=n*2,
-                  phase_qubit=eng.allocate_qubit(),
-                  work_qureg=eng.allocate_qureg(n),
-                  ancilla_qureg=eng.allocate_qureg(n))
-    print('{}'.format(ctr))
+    modulus = 7 * 11
+    n = int(math.ceil(math.log(modulus, 2)))
+    base = 6
+
+    ancilla_qureg = eng.allocate_qureg(n)
+    X | ancilla_qureg[0]
+    # for q in ancilla_qureg[:-1]:
+    #     if random.random() < 0.5:
+    #         X | q
+    Measure | ancilla_qureg
+    eng.flush()
+    before = int(ancilla_qureg)
+
+    p = sample_period(eng,
+                      base=base,
+                      modulus=modulus,
+                      precision=n * 2,
+                      phase_qubit=eng.allocate_qubit(),
+                      work_qureg=eng.allocate_qureg(n),
+                      ancilla_qureg=ancilla_qureg)
+
+    Measure | ancilla_qureg
+    eng.flush()
+    after = int(ancilla_qureg)
+    print("before", before, "after", after)
+    u = pow(base, p, modulus)
+    print("result", p, "u", u)
+
+    assert before == after
+    assert u == 1
 
 
 if __name__ == "__main__":
