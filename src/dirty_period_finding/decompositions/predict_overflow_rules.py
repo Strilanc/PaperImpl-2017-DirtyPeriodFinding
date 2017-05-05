@@ -175,24 +175,29 @@ def do_comparison_to_overflow(gate, comparand_reg, target_bit, controls):
 
     g = PredictOffsetOverflowGate(overflow_val - gate.comparand)
     g & controls | (comparand_reg, target_bit)
+    X & controls | target_bit
+
+
+decompose_overflow = DecompositionRule(
+    gate_class=PredictOffsetOverflowGate,
+    gate_recognizer=min_workspace_vs_reg1(1, offset=-1),
+    gate_decomposer=lambda cmd: do_predict_overflow(
+        offset=cmd.gate.offset,
+        query_reg=cmd.qubits[0],
+        target_bit=cmd.qubits[1],
+        dirty_reg=workspace(cmd)[:len(cmd.qubits[0]) - 1],
+        controls=cmd.control_qubits))
+
+decompose_less_than_into_overflow = DecompositionRule(
+    gate_class=LessThanConstantGate,
+    gate_decomposer=lambda cmd: do_comparison_to_overflow(
+        gate=cmd.gate,
+        comparand_reg=cmd.qubits[0],
+        target_bit=cmd.qubits[1],
+        controls=cmd.control_qubits))
 
 
 all_defined_decomposition_rules = [
-    DecompositionRule(
-        gate_class=PredictOffsetOverflowGate,
-        gate_recognizer=min_workspace_vs_reg1(1, offset=-1),
-        gate_decomposer=lambda cmd: do_predict_overflow(
-            offset=cmd.gate.offset,
-            query_reg=cmd.qubits[0],
-            target_bit=cmd.qubits[1],
-            dirty_reg=workspace(cmd)[:len(cmd.qubits[0]) - 1],
-            controls=cmd.control_qubits)),
-
-    DecompositionRule(
-        gate_class=LessThanConstantGate,
-        gate_decomposer=lambda cmd: do_comparison_to_overflow(
-            gate=cmd.gate,
-            comparand_reg=cmd.qubits[0],
-            target_bit=cmd.qubits[1],
-            controls=cmd.control_qubits)),
+    decompose_overflow,
+    decompose_less_than_into_overflow,
 ]

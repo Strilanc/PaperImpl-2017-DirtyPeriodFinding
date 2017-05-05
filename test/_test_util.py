@@ -20,6 +20,7 @@ from dirty_period_finding.extensions import (
     AutoReplacerEx,
     LimitedCapabilityEngine,
     CommandEx,
+    BasicGateEx,
 )
 from dirty_period_finding.gates import X
 
@@ -258,6 +259,7 @@ def check_permutation_decomposition(gate,
                                     decomposition_rule,
                                     register_sizes,
                                     control_size=0,
+                                    workspace=0,
                                     register_limits=None):
     """
     Args:
@@ -266,31 +268,32 @@ def check_permutation_decomposition(gate,
         decomposition_rule (projectq.cengines.DecompositionRule):
         register_sizes (list[int]):
         control_size (int):
+        workspace (int):
         register_limits (list[int]):
     """
     assert isinstance(gate, decomposition_rule.gate_class)
 
-    if control_size + sum(register_sizes) <= 8:
+    if control_size + workspace + sum(register_sizes) <= 8:
         test_method = check_permutation_circuit
     else:
         test_method = fuzz_permutation_circuit
 
     def fake_regs(sizes):
-        return tuple([None]*i for i in sizes)
+        return tuple([None] * i for i in sizes)
 
     def apply_decomposition(eng, regs):
-        command = CommandEx(eng, gate, regs[1:], regs[0])
+        command = CommandEx(eng, gate, regs[2:], regs[0])
         assert decomposition_rule.gate_recognizer(command)
         decomposition_rule.gate_decomposer(command)
 
     def apply_permutation(sizes, args):
         if args[0] == ~(~0 << sizes[0]):
-            out = gate.get_math_function(fake_regs(sizes[1:]))(args[1:])
-            return tuple(args[:1]) + tuple(out)
+            out = gate.get_math_function(fake_regs(sizes[2:]))(args[2:])
+            return tuple(args[:2]) + tuple(out)
         return args
 
     test_method(
-        register_sizes=[control_size] + register_sizes,
+        register_sizes=[control_size, workspace] + register_sizes,
         register_limits=(None
                          if register_limits is None
                          else [1 << control_size] + register_limits),
@@ -298,10 +301,19 @@ def check_permutation_decomposition(gate,
         actions=apply_decomposition)
 
 
+class JunkGate(BasicGateEx):
+    def ascii_register_labels(self):
+        return ['???']
+
+    def ascii_borders(self):
+        return False
+
+
 def record_decomposition(gate,
                          decomposition_rule,
                          register_sizes,
-                         control_size=0):
+                         control_size=0,
+                         workspace=0):
     """
     Args:
         gate (projectq.ops.BasicMathGate|
@@ -309,15 +321,19 @@ def record_decomposition(gate,
         decomposition_rule (projectq.cengines.DecompositionRule):
         register_sizes (list[int]):
         control_size (int):
+        workspace (int):
     """
     assert isinstance(gate, decomposition_rule.gate_class)
 
     rec = DummyEngine(save_commands=True)
     eng = MainEngine(backend=rec, engine_list=[])
     regs = tuple(eng.allocate_qureg(size)
-                 for size in [control_size] + register_sizes)
+                 for size in [control_size, workspace] + register_sizes)
     rec.received_commands = []
-    command = CommandEx(eng, gate, regs[1:], regs[0])
+    if len(regs[1]):
+        JunkGate() | regs[1]
+
+    command = CommandEx(eng, gate, regs[2:], regs[0])
     assert decomposition_rule.gate_recognizer(command)
     decomposition_rule.gate_decomposer(command)
     return rec.received_commands
@@ -326,9 +342,11 @@ def record_decomposition(gate,
 def decomposition_to_ascii(gate,
                            decomposition_rule,
                            register_sizes,
-                           control_size=0):
+                           control_size=0,
+                           workspace=0):
     return commands_to_ascii_circuit(record_decomposition(gate,
                                                           decomposition_rule,
                                                           register_sizes,
-                                                          control_size),
+                                                          control_size,
+                                                          workspace),
                                      ascii_only=True)
