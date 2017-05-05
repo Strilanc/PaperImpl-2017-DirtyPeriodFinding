@@ -9,7 +9,11 @@ import numpy as np
 import projectq.ops
 from projectq.ops import NotMergeable
 
-from dirty_period_finding.extensions import BasicGateEx, BasicMathGateEx
+from dirty_period_finding.extensions import (
+    BasicGateEx,
+    BasicMathGateEx,
+    GateWithCurriedControls,
+)
 
 
 def _exp_pi_i(f):
@@ -133,7 +137,14 @@ class ZGate(VectorPhaserGate):
         return VectorPhaserGate.__str__(self)
 
 
-class XGate(VectorPhaserGate, BasicMathGateEx, projectq.ops.XGate):
+# A complicated hierarchy causes extreme overhead in the simulator loop.
+# So only add the very basics.
+class XGate(projectq.ops.XGate, BasicGateEx):
+    def __pow__(self, power):
+        return FancyXGate()**power
+
+
+class FancyXGate(VectorPhaserGate, BasicMathGateEx, projectq.ops.XGate):
     def __init__(self, half_turns=1.0):
         BasicMathGateEx.__init__(self)
         projectq.ops.XGate.__init__(self)

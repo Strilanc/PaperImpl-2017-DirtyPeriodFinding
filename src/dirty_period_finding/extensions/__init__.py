@@ -3,6 +3,7 @@ from ._basic_gate_ex import (
     BasicGateEx,
     H,
     SelfInverseGateEx,
+    GateWithCurriedControls,
 )
 from ._basic_math_gate_ex import (
     BasicMathGateEx,
