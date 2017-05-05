@@ -56,7 +56,7 @@ def test_toffoli_size_of_modular_double():
     ModularDoubleGate(modulus) & controls | target
 
     assert dirty is not None
-    assert 5000 < len(rec.received_commands) < 10000
+    assert 2000 < len(rec.received_commands) < 4000
 
 
 def test_check_modular_double_permutations_small():

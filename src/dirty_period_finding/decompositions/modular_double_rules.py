@@ -7,10 +7,8 @@ from dirty_period_finding.gates import (
     X,
     ModularBimultiplicationGate,
     ModularDoubleGate,
-    ConstPivotFlipGate,
     OffsetGate,
-    MultiNot,
-    LeftRotateBits
+    LeftRotateBits,
 )
 
 
@@ -28,9 +26,8 @@ def do_modular_double(gate, target_reg, controls):
 
     h = (gate.modulus + 1) // 2
 
-    ConstPivotFlipGate(h) & controls | target_reg
     OffsetGate(-h) & controls | target_reg
-    MultiNot & target_reg[-1] & controls | target_reg[:-1]
+    OffsetGate(h) & target_reg[-1] & controls | target_reg[:-1]
     X & controls | target_reg[-1]
     LeftRotateBits & controls | target_reg
 

@@ -83,7 +83,7 @@ def test_toffoli_size_of_bimultiplication():
 
     ModularBimultiplicationGate(factor, modulus) & controls | (t1, t2)
 
-    assert 10000 < len(rec.received_commands) < 30000
+    assert 5000 < len(rec.received_commands) < 15000
 
 
 def test_fuzz_bimultiplication():
