@@ -2,9 +2,6 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-import itertools
-import random
-
 from projectq import MainEngine
 from projectq.cengines import DecompositionRuleSet, DummyEngine
 from projectq.setups.decompositions import swap2cnot
@@ -18,6 +15,10 @@ from dirty_period_finding.decompositions import (
     multi_not_rules,
     comparison_rules,
 )
+from dirty_period_finding.decompositions.modular_addition_rules import (
+    decompose_modular_offset,
+    decompose_modular_addition,
+)
 from dirty_period_finding.extensions import (
     LimitedCapabilityEngine,
     AutoReplacerEx,
@@ -26,7 +27,25 @@ from dirty_period_finding.gates import (
     ModularAdditionGate,
     ModularOffsetGate,
 )
-from .._test_util import fuzz_permutation_circuit, check_permutation_circuit
+from .._test_util import (
+    cover,
+    check_permutation_decomposition,
+    decomposition_to_ascii,
+)
+
+
+def test_modular_offset_operation():
+    assert ModularOffsetGate(2, 13).do_operation(234) == (234,)
+    assert ModularOffsetGate(2, 13).do_operation(11) == (0,)
+    assert ModularOffsetGate(5, 13).do_operation(11) == (3,)
+    assert ModularOffsetGate(5, 13).do_operation(1) == (6,)
+
+
+def test_modular_addition_operation():
+    assert ModularAdditionGate(13).do_operation(3, 11) == (3, 1)
+    assert ModularAdditionGate(13).do_operation(3, 17) == (3, 17)
+    assert ModularAdditionGate(13).do_operation(17, 3) == (17, 3)
+    assert ModularAdditionGate(13).do_operation(2, 4) == (2, 6)
 
 
 def test_toffoli_size_of_modular_addition():
@@ -81,101 +100,92 @@ def test_toffoli_size_of_modular_offset():
     assert 5000 < len(rec.received_commands) < 15000
 
 
-def test_check_modular_offset_permutations_small():
-    for n, nc in itertools.product([2, 3, 4],
-                                   [0, 1]):
-        for modulus in range((1 << (n-1)) + 1, (1 << n) + 1)[::2]:
-            for offset in range(modulus):
-                check_permutation_circuit(
-                    register_sizes=[n, nc],
-                    register_limits=[modulus, 1 << nc],
-                    permutation=lambda _, (t, c):
-                        ((t + offset) % modulus if c + 1 == 1 << nc else t, c),
-                    engine_list=[
-                        AutoReplacerEx(DecompositionRuleSet(modules=[
-                            modular_addition_rules,
-                        ])),
-                        LimitedCapabilityEngine(
-                            allow_all=True,
-                            ban_classes=[
-                                ModularOffsetGate,
-                            ],
-                        ),
-                    ],
-                    actions=lambda eng, (t, c):
-                        ModularOffsetGate(offset, modulus) & c | t)
+def test_decompose_modular_addition():
+    for register_size in range(1, 100):
+        for control_size in range(3):
+            for h_modulus in cover((1 << register_size) - 1):
+                modulus = h_modulus + 1
+
+                check_permutation_decomposition(
+                    decomposition_rule=decompose_modular_addition,
+                    gate=ModularAdditionGate(modulus),
+                    register_sizes=[register_size, register_size],
+                    control_size=control_size,
+                    register_limits=[modulus, modulus])
 
 
-def test_fuzz_modular_offset_permutations_large():
-    for _ in range(10):
-        n = random.randint(2, 50)
-        nc = random.randint(0, 2)
-        modulus = random.randint((1 << (n-1)) + 1, (1 << n) - 1)
-        offset = random.randint(0, modulus - 1)
-        fuzz_permutation_circuit(
-            register_sizes=[n, nc],
-            register_limits=[modulus, 1 << nc],
-            permutation=lambda _, (t, c):
-                ((t + offset) % modulus if c + 1 == 1 << nc else t, c),
-            engine_list=[
-                AutoReplacerEx(DecompositionRuleSet(modules=[
-                    modular_addition_rules,
-                ])),
-                LimitedCapabilityEngine(
-                    allow_all=True,
-                    ban_classes=[
-                        ModularOffsetGate,
-                    ],
-                ),
-            ],
-            actions=lambda eng, (t, c):
-                ModularOffsetGate(offset, modulus) & c | t)
+def test_decompose_modular_offset():
+    for register_size in range(1, 100):
+        for control_size in range(3):
+            for h_modulus in cover(1 << register_size):
+                modulus = h_modulus + 1
+                for offset in cover(modulus):
+
+                    check_permutation_decomposition(
+                        decomposition_rule=decompose_modular_offset,
+                        gate=ModularOffsetGate(offset, modulus),
+                        register_sizes=[register_size],
+                        control_size=control_size,
+                        register_limits=[modulus])
 
 
-def test_check_modular_addition_permutations_small():
-    for n, nc in itertools.product([2, 3, 4],
-                                   [0, 1]):
-        for modulus in range((1 << (n-1)) + 1, (1 << n) + 1)[::2]:
-            check_permutation_circuit(
-                register_sizes=[n, n, nc],
-                register_limits=[modulus, modulus, 1 << nc],
-                permutation=lambda _, (a, t, c):
-                    (a, (t + a) % modulus if c + 1 == 1 << nc else t, c),
-                engine_list=[
-                    AutoReplacerEx(DecompositionRuleSet(modules=[
-                        modular_addition_rules,
-                    ])),
-                    LimitedCapabilityEngine(
-                        allow_all=True,
-                        ban_classes=[
-                            ModularAdditionGate,
-                        ],
-                    ),
-                ],
-                actions=lambda eng, (a, t, c):
-                    ModularAdditionGate(modulus) & c | (a, t))
+def test_diagram_decompose_modular_addition():
+    text_diagram = decomposition_to_ascii(
+        gate=ModularAdditionGate(51),
+        decomposition_rule=decompose_modular_addition,
+        register_sizes=[6, 6],
+        control_size=1)
+    print(text_diagram)
+    assert text_diagram == """
+|0>-@-----@----------------------@-----@-----@------------------
+    | .---|---. .----------.     |     | .---|---. .----------.
+|0>-X-|       |-|          |-----|-----X-|       |-|          |-
+    | |       | |          |     |     | |       | |          |
+|0>-X-|       |-|          |-----|-----X-|       |-|          |-
+    | |       | |          |     |     | |       | |          |
+|0>-X-|       |-|          |-----|-----X-|       |-|          |-
+    | |       | |          |     |     | |       | |          |
+|0>-X-|  +52  |-|    A     |-----|-----X-|  +52  |-|    A     |-
+    | |       | |          |     |     | |       | |          |
+|0>-X-|       |-|          |-----|-----X-|       |-|          |-
+    | |       | |          |     |     | |       | |          |
+|0>-X-|       |-|          |-----|-----X-|       |-|          |-
+      `-------` |----------| .---|---. | `-------` |----------|
+|0>-------------|          |-|       |-X-----------|          |-
+                |          | |       | |           |          |
+|0>-------------|          |-|       |-X-----------|          |-
+                |          | |       | |           |          |
+|0>-------------|          |-|       |-X-----------|          |-
+                |          | |       | |           |          |
+|0>-------------|  Flip<A  |-|  -51  |-X-----------|  Flip<A  |-
+                |          | |       | |           |          |
+|0>-------------|          |-|       |-X-----------|          |-
+                |          | |       | |           |          |
+|0>-------------|          |-|       |-X-----------|          |-
+                `----------` `-------`             `----------`
+        """.strip()
 
 
-def test_fuzz_modular_addition_permutations_large():
-    for _ in range(10):
-        n = random.randint(2, 50)
-        nc = random.randint(0, 2)
-        modulus = random.randint((1 << (n - 1)) + 1, (1 << n) - 1)
-        fuzz_permutation_circuit(
-            register_sizes=[n, n, nc],
-            register_limits=[modulus, modulus, 1 << nc],
-            permutation=lambda _, (a, t, c):
-            (a, (t + a) % modulus if c + 1 == 1 << nc else t, c),
-            engine_list=[
-                AutoReplacerEx(DecompositionRuleSet(modules=[
-                    modular_addition_rules,
-                ])),
-                LimitedCapabilityEngine(
-                    allow_all=True,
-                    ban_classes=[
-                        ModularAdditionGate,
-                    ],
-                ),
-            ],
-            actions=lambda eng, (a, t, c):
-            ModularAdditionGate(modulus) & c | (a, t))
+def test_diagram_decompose_modular_offset():
+    text_diagram = decomposition_to_ascii(
+        gate=ModularOffsetGate(13, 51),
+        decomposition_rule=decompose_modular_offset,
+        register_sizes=[6],
+        control_size=1)
+    print(text_diagram)
+    assert text_diagram == """
+|0>-------@-----------@-----@-------@-------
+    .-----|-----. .---|---. | .-----|-----.
+|0>-|           |-|       |-X-|           |-
+    |           | |       | | |           |
+|0>-|           |-|       |-X-|           |-
+    |           | |       | | |           |
+|0>-|           |-|       |-X-|           |-
+    |           | |       | | |           |
+|0>-|  Flip<38  |-|  -51  |-X-|  Flip<13  |-
+    |           | |       | | |           |
+|0>-|           |-|       |-X-|           |-
+    |           | |       | | |           |
+|0>-|           |-|       |-X-|           |-
+    `-----------` `-------`   `-----------`
+        """.strip()

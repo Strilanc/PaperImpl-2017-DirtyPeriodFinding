@@ -115,7 +115,7 @@ def test_diagram_decompose_xor_offset_carry_signals():
 |0>---@-X---------------------X-@---
       |                         |
 |0>---X-------------------------X---
-    """.strip()
+        """.strip()
 
 
 def test_diagram_decompose_overflow():
@@ -153,7 +153,7 @@ def test_diagram_decompose_overflow():
         |                  | | |                  | |
 |0>-???-|                  |-@-|                  |-@-
         `------------------`   `------------------`
-    """.strip()
+        """.strip()
 
 
 def test_diagram_decompose_less_than_into_overflow():
@@ -176,4 +176,4 @@ def test_diagram_decompose_less_than_into_overflow():
     |-------------------| |
 |0>-|  Xoverflow(A+=9)  |-X-
     `-------------------`
-    """.strip()
+        """.strip()
