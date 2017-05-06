@@ -77,9 +77,17 @@ def sample_period(eng,
     # Fix ancilla register using factor in work register.
     Measure | work_qureg
     eng.flush()
-    fixup_factor = int(work_qureg) * (-1)**precision
+
+    fixup_factor = int(work_qureg)
     fixup_gate = ModularBimultiplicationGate(fixup_factor, modulus)
     fixup_gate | (ancilla_qureg, work_qureg)
+
+    Measure | ancilla_qureg[-2]
+    Measure | ancilla_qureg[-1]
+    eng.flush()
+    sign_flip = bool(ancilla_qureg[-2]) or bool(ancilla_qureg[-1])
+    if sign_flip:
+        ConstPivotFlipGate(modulus + 1) | ancilla_qureg
 
     # Estimate period based on denominator of closest fraction.
     return frac.limit_denominator(modulus - 1).denominator
@@ -110,15 +118,14 @@ def main():
         ),
     ])
 
-    modulus = 7 * 11
+    modulus = 53 * 17
     n = int(math.ceil(math.log(modulus, 2)))
     base = 6
 
     ancilla_qureg = eng.allocate_qureg(n)
-    X | ancilla_qureg[0]
-    # for q in ancilla_qureg[:-1]:
-    #     if random.random() < 0.5:
-    #         X | q
+    for q in ancilla_qureg[:-2]:
+        if random.random() < 0.5:
+            X | q
     Measure | ancilla_qureg
     eng.flush()
     before = int(ancilla_qureg)
@@ -136,10 +143,10 @@ def main():
     after = int(ancilla_qureg)
     print("before", before, "after", after)
     u = pow(base, p, modulus)
-    print("result", p, "u", u)
+    print("result", p, "u", u if u < modulus / 2 else '-' + str(-u % modulus))
 
     assert before == after
-    assert u == 1
+    print(u == 1 or u == -1 % modulus)
 
 
 if __name__ == "__main__":

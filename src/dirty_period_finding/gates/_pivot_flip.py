@@ -54,4 +54,5 @@ class ConstPivotFlipGate(BasicMathGateEx, SelfInverseGateEx):
     def __str__(self):
         return 'Flip<{}'.format(self.pivot)
 
+
 PivotFlip = PivotFlipGate()
