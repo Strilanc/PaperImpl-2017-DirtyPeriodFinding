@@ -122,29 +122,33 @@ def do_increment_with_1_dirty(target_reg, dirty_qubit, controls):
     Subtract | (b, a)
 
 
+# For small increments, the quadratic construction is shorter.
+decompose_increment_into_cnot_triangle = DecompositionRule(
+    gate_class=IncrementGate,
+    gate_recognizer=max_register_sizes(8) & max_controls(3),
+    gate_decomposer=lambda cmd: do_naive_increment(
+        target_reg=cmd.qubits[0],
+        controls=cmd.control_qubits))
+
+# When there's lots of workspace, use double-subtract with inversion.
+decompose_increment_high_workspace = DecompositionRule(
+    gate_class=IncrementGate,
+    gate_recognizer=max_controls(0) & min_workspace_vs_reg1(factor=1),
+    gate_decomposer=lambda cmd: do_increment_with_no_controls_and_n_dirty(
+        target_reg=cmd.qubits[0],
+        dirty_reg=workspace(cmd)))
+
+# When there's not a lot of workspace, do more complicated stuff.
+decompose_increment_with_low_workspace = DecompositionRule(
+    gate_class=IncrementGate,
+    gate_recognizer=min_workspace(1),
+    gate_decomposer=lambda cmd: do_increment_with_1_dirty(
+        target_reg=cmd.qubits[0],
+        dirty_qubit=workspace(cmd)[0],
+        controls=cmd.control_qubits))
+
 all_defined_decomposition_rules = [
-    # For small increments, the quadratic construction is shorter.
-    DecompositionRule(
-        gate_class=IncrementGate,
-        gate_recognizer=max_register_sizes(8) & max_controls(3),
-        gate_decomposer=lambda cmd: do_naive_increment(
-            target_reg=cmd.qubits[0],
-            controls=cmd.control_qubits)),
-
-    # When there's lots of workspace, use double-subtract with inversion.
-    DecompositionRule(
-        gate_class=IncrementGate,
-        gate_recognizer=max_controls(0) & min_workspace_vs_reg1(factor=1),
-        gate_decomposer=lambda cmd: do_increment_with_no_controls_and_n_dirty(
-            target_reg=cmd.qubits[0],
-            dirty_reg=workspace(cmd))),
-
-    # When there's not a lot of workspace, do more complicated stuff.
-    DecompositionRule(
-        gate_class=IncrementGate,
-        gate_recognizer=min_workspace(1),
-        gate_decomposer=lambda cmd: do_increment_with_1_dirty(
-            target_reg=cmd.qubits[0],
-            dirty_qubit=workspace(cmd)[0],
-            controls=cmd.control_qubits)),
+    decompose_increment_into_cnot_triangle,
+    decompose_increment_high_workspace,
+    decompose_increment_with_low_workspace,
 ]

@@ -2,8 +2,6 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-import random
-
 from projectq import MainEngine
 from projectq.cengines import DecompositionRuleSet, DummyEngine
 from projectq.setups.decompositions import swap2cnot
@@ -14,47 +12,26 @@ from dirty_period_finding.decompositions import (
     multi_not_rules
 )
 from dirty_period_finding.decompositions.increment_rules import (
-    do_increment_with_no_controls_and_n_dirty
+    decompose_increment_into_cnot_triangle,
+    decompose_increment_with_low_workspace,
+    decompose_increment_high_workspace,
 )
 from dirty_period_finding.extensions import (
     AutoReplacerEx,
     LimitedCapabilityEngine,
 )
-from dirty_period_finding.gates import Subtract, Increment, MultiNot
-from .._test_util import fuzz_permutation_circuit
+from dirty_period_finding.gates import Decrement, Increment
+from .._test_util import (
+    check_permutation_decomposition,
+    decomposition_to_ascii
+)
 
 
-def test_do_increment_with_no_controls_and_n_dirty():
-    backend = DummyEngine(save_commands=True)
-    eng = MainEngine(backend=backend, engine_list=[])
-    target = eng.allocate_qureg(10)
-    dirty = eng.allocate_qureg(10)
-    backend.received_commands = []
-
-    do_increment_with_no_controls_and_n_dirty(target, dirty)
-
-    assert backend.received_commands == [
-        Subtract.generate_command((dirty, target)),
-        MultiNot.generate_command(dirty),
-        Subtract.generate_command((dirty, target)),
-        MultiNot.generate_command(dirty),
-    ]
-
-
-def test_fuzz_do_increment_with_no_controls_and_n_dirty():
-    for _ in range(10):
-        fuzz_permutation_circuit(
-            register_sizes=[4, 4],
-            permutation=lambda ns, (a, b): (a + 1, b),
-            engine_list=[AutoReplacerEx(DecompositionRuleSet(modules=[
-                addition_rules,
-                multi_not_rules,
-                swap2cnot
-            ]))],
-            actions=lambda eng, regs:
-                do_increment_with_no_controls_and_n_dirty(
-                    target_reg=regs[0],
-                    dirty_reg=regs[1]))
+def test_increment_operation():
+    assert Increment.do_operation(101) == (102,)
+    assert Increment.do_operation(5) == (6,)
+    assert Decrement.do_operation(101) == (100,)
+    assert Decrement.do_operation(5) == (4,)
 
 
 def test_toffoli_size_of_increment():
@@ -75,22 +52,111 @@ def test_toffoli_size_of_increment():
     assert 1000 < len(backend.received_commands) < 10000
 
 
-def test_fuzz_controlled_increment():
-    for _ in range(10):
-        n = random.randint(1, 30)
-        control_size = random.randint(0, 3)
-        satisfy = (1 << control_size) - 1
-        fuzz_permutation_circuit(
-            register_sizes=[control_size, n, 2],
-            permutation=lambda ns, (c, t, d):
-                (c, t + (1 if c == satisfy else 0), d),
-            engine_list=[
-                AutoReplacerEx(DecompositionRuleSet(modules=[
-                    swap2cnot,
-                    multi_not_rules,
-                    increment_rules,
-                    addition_rules,
-                ])),
-                LimitedCapabilityEngine(allow_toffoli=True),
-            ],
-            actions=lambda eng, regs: Increment & regs[0] | regs[1])
+def test_decompose_increment_into_cnot_triangle():
+    for register_size in range(9):
+        for control_size in range(4):
+            check_permutation_decomposition(
+                decomposition_rule=decompose_increment_into_cnot_triangle,
+                gate=Increment,
+                register_sizes=[register_size],
+                control_size=control_size)
+
+
+def test_decompose_increment_with_low_workspace():
+    for register_size in range(100):
+        for control_size in range(3):
+            check_permutation_decomposition(
+                decomposition_rule=decompose_increment_with_low_workspace,
+                gate=Increment,
+                register_sizes=[register_size],
+                workspace=1,
+                control_size=control_size)
+
+
+def test_decompose_increment_high_workspace():
+    for register_size in range(100):
+        check_permutation_decomposition(
+            decomposition_rule=decompose_increment_high_workspace,
+            gate=Increment,
+            register_sizes=[register_size],
+            workspace=register_size)
+
+
+def test_diagram_decompose_increment_into_cnot_triangle():
+    text_diagram = decomposition_to_ascii(
+        decomposition_rule=decompose_increment_into_cnot_triangle,
+        gate=Increment,
+        register_sizes=[6],
+        control_size=1)
+    print(text_diagram)
+    assert text_diagram == """
+|0>-@-@-@-@-@-@-
+    | | | | | |
+|0>-@-@-@-@-@-X-
+    | | | | |
+|0>-@-@-@-@-X---
+    | | | |
+|0>-@-@-@-X-----
+    | | |
+|0>-@-@-X-------
+    | |
+|0>-@-X---------
+    |
+|0>-X-----------
+    """.strip()
+
+
+def test_diagram_decompose_increment_with_low_workspace():
+    text_diagram = decomposition_to_ascii(
+        decomposition_rule=decompose_increment_with_low_workspace,
+        gate=Increment,
+        register_sizes=[6],
+        workspace=1,
+        control_size=1)
+    print(text_diagram)
+    assert text_diagram == """
+|0>--------------@----------@-@----------@----------@-
+                 |          | |          |          |
+|0>--------------@----------@-@----------@----------X-
+        .------. | .------. | | .------. | .------.
+|0>-----|      |-@-|      |-@-X-|      |-X-|      |---
+        |      | | |      | | | |      | | |      |
+|0>-----|  A   |-@-|  A   |-@-X-|  +A  |-X-|  −A  |---
+        |      | | |      | | | |      | | |      |
+|0>-----|      |-@-|      |-@-X-|      |-X-|      |---
+        |------| | |------| | | |------| | |------|
+|0>-----|1     |-X-|1     |-X-X-|1     |-X-|1     |---
+        |      | | |      | | | |      | | |      |
+|0>-----|2 −A  |-X-|2 +A  |-X-X-|2 A   |-X-|2 A   |---
+        |      | | |      | | | |      | | |      |
+|0>-???-|0     |-X-|0     |-X-X-|0     |-X-|0     |---
+        `------`   `------`     `------`   `------`
+    """.strip()
+
+
+def test_diagram_decompose_increment_high_workspace():
+    text_diagram = decomposition_to_ascii(
+        decomposition_rule=decompose_increment_high_workspace,
+        gate=Increment,
+        register_sizes=[4],
+        workspace=4)
+    print(text_diagram)
+    assert text_diagram == """
+        .------.   .------.
+|0>-----|      |---|      |---
+        |      |   |      |
+|0>-----|      |---|      |---
+        |      |   |      |
+|0>-----|  −A  |---|  −A  |---
+        |      |   |      |
+|0>-----|      |---|      |---
+        |------|   |------|
+|0>-???-|      |-X-|      |-X-
+        |      |   |      |
+|0>-???-|      |-X-|      |-X-
+        |      |   |      |
+|0>-???-|  A   |-X-|  A   |-X-
+        |      |   |      |
+|0>-???-|      |-X-|      |-X-
+        `------`   `------`
+    """.lstrip('\n').rstrip()

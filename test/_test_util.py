@@ -329,13 +329,14 @@ def record_decomposition(gate,
 
     rec = DummyEngine(save_commands=True)
     eng = MainEngine(backend=rec, engine_list=[])
-    regs = tuple(eng.allocate_qureg(size)
-                 for size in [control_size, workspace] + register_sizes)
+    controls = eng.allocate_qureg(control_size)
+    regs = tuple(eng.allocate_qureg(size) for size in register_sizes)
+    junk = eng.allocate_qureg(workspace)
     rec.received_commands = []
-    if len(regs[1]):
-        JunkGate() | regs[1]
+    if len(junk):
+        JunkGate() | junk
 
-    command = CommandEx(eng, gate, regs[2:], regs[0])
+    command = CommandEx(eng, gate, regs, controls)
     assert decomposition_rule.gate_recognizer(command)
     decomposition_rule.gate_decomposer(command)
     return rec.received_commands
