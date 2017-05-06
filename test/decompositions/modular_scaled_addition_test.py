@@ -17,7 +17,7 @@ from dirty_period_finding.decompositions import (
     modular_double_rules,
     rotate_bits_rules,
     reverse_bits_rules,
-    predict_overflow_rules,
+    comparison_rules,
 )
 from dirty_period_finding.decompositions.modular_scaled_addition_rules import (
     decompose_into_doubled_addition
@@ -49,7 +49,7 @@ def test_toffoli_size_of_scaled_modular_addition():
             increment_rules,
             multi_not_rules,
             modular_addition_rules,
-            predict_overflow_rules,
+            comparison_rules,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
     ])

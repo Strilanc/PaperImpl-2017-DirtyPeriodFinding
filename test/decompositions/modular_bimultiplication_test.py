@@ -20,7 +20,7 @@ from dirty_period_finding.decompositions import (
     modular_double_rules,
     rotate_bits_rules,
     reverse_bits_rules,
-    predict_overflow_rules,
+    comparison_rules,
 )
 from dirty_period_finding.decompositions.modular_bimultiplication_rules import (
     decompose_into_adds_and_rotate,
@@ -55,7 +55,7 @@ def test_toffoli_size_of_bimultiplication():
             modular_double_rules,
             rotate_bits_rules,
             reverse_bits_rules,
-            predict_overflow_rules,
+            comparison_rules,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
     ])

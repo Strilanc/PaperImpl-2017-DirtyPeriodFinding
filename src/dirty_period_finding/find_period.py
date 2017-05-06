@@ -109,7 +109,7 @@ def main():
             reverse_bits_rules,
             rotate_bits_rules,
             swap2cnot,
-            predict_overflow_rules,
+            comparison_rules,
         ])),
         LimitedCapabilityEngine(
             allow_toffoli=True,

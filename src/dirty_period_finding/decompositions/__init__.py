@@ -9,7 +9,7 @@ import multi_not_rules
 import offset_rules
 import phase_gradient_rules
 import pivot_flip_rules
-import predict_overflow_rules
+import comparison_rules
 import reverse_bits_rules
 import rotate_bits_rules
 
@@ -27,7 +27,7 @@ all_defined_decomposition_rules = [
         offset_rules,
         phase_gradient_rules,
         pivot_flip_rules,
-        predict_overflow_rules,
+        comparison_rules,
         reverse_bits_rules,
         rotate_bits_rules,
     ]

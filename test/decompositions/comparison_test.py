@@ -8,7 +8,7 @@ from dirty_period_finding.decompositions import (
     offset_rules,
     multi_not_rules,
 )
-from dirty_period_finding.decompositions.predict_overflow_rules import (
+from dirty_period_finding.decompositions.comparison_rules import (
     do_predict_carry_signals,
     decompose_less_than_into_overflow,
     decompose_overflow,

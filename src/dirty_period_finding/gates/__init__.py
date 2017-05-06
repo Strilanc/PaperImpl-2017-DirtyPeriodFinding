@@ -10,7 +10,7 @@ from ._multi_not import MultiNot, MultiNotGate
 from ._offset import OffsetGate
 from ._phase_gradient import PhaseGradientGate, PhaseGradient
 from ._pivot_flip import PivotFlipGate, ConstPivotFlipGate, PivotFlip
-from ._predict_overflow import (
+from ._comparison import (
     PredictOffsetOverflowGate,
     LessThanConstantGate,
 )

@@ -15,7 +15,7 @@ from dirty_period_finding.decompositions import (
     offset_rules,
     rotate_bits_rules,
     reverse_bits_rules,
-    predict_overflow_rules,
+    comparison_rules,
 )
 from dirty_period_finding.decompositions.modular_double_rules import (
     decompose_into_align_and_rotate
@@ -48,7 +48,7 @@ def test_toffoli_size_of_modular_double():
             multi_not_rules,
             rotate_bits_rules,
             reverse_bits_rules,
-            predict_overflow_rules,
+            comparison_rules,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
     ])

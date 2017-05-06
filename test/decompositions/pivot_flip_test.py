@@ -15,7 +15,7 @@ from dirty_period_finding.decompositions import (
     offset_rules,
     increment_rules,
     multi_not_rules,
-    predict_overflow_rules,
+    comparison_rules,
 )
 from dirty_period_finding.extensions import (
     LimitedCapabilityEngine,
@@ -62,7 +62,7 @@ def test_toffoli_size_of_const_pivot_flip():
             swap2cnot,
             increment_rules,
             multi_not_rules,
-            predict_overflow_rules,
+            comparison_rules,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
     ])
