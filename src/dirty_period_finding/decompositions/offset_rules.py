@@ -150,32 +150,37 @@ def _better_to_use_bitrange_offset(cmd):
     return c <= 4
 
 
+decompose_remove_controls = DecompositionRule(
+    gate_class=OffsetGate,
+    gate_recognizer=min_controls(1) & min_workspace(1),
+    gate_decomposer=lambda cmd: do_controlled_offset(
+        gate=cmd.gate,
+        target_reg=cmd.qubits[0],
+        controls=cmd.control_qubits,
+        dirty_qubit=workspace(cmd)[0]))
+
+decompose_into_range_increments = DecompositionRule(
+    gate_class=OffsetGate,
+    gate_recognizer=max_controls(0) & _better_to_use_bitrange_offset,
+    gate_decomposer=lambda cmd: do_bitrange_offset(
+        offset=cmd.gate.offset,
+        target_reg=cmd.qubits[0]))
+
+decompose_into_recursion = DecompositionRule(
+    gate_class=OffsetGate,
+    gate_recognizer=max_controls(0) & min_workspace(1),
+    gate_decomposer=lambda cmd: do_recursive_offset(
+        gate=cmd.gate,
+        target_reg=cmd.qubits[0],
+        controls=cmd.control_qubits,
+        dirty_qubit=workspace(cmd)[0]))
+
+
 all_defined_decomposition_rules = [
     # Separate the controlling from the offsetting.
-    DecompositionRule(
-        gate_class=OffsetGate,
-        gate_recognizer=min_controls(1) & min_workspace(1),
-        gate_decomposer=lambda cmd: do_controlled_offset(
-            gate=cmd.gate,
-            target_reg=cmd.qubits[0],
-            controls=cmd.control_qubits,
-            dirty_qubit=workspace(cmd)[0])),
-
+    decompose_remove_controls,
     # For simple offsets, just use increments and decrements.
-    DecompositionRule(
-        gate_class=OffsetGate,
-        gate_recognizer=max_controls(0) & _better_to_use_bitrange_offset,
-        gate_decomposer=lambda cmd: do_bitrange_offset(
-            offset=cmd.gate.offset,
-            target_reg=cmd.qubits[0])),
-
+    decompose_into_range_increments,
     # Divide-and-conquer an uncontrolled offset.
-    DecompositionRule(
-        gate_class=OffsetGate,
-        gate_recognizer=max_controls(0) & min_workspace(1),
-        gate_decomposer=lambda cmd: do_recursive_offset(
-            gate=cmd.gate,
-            target_reg=cmd.qubits[0],
-            controls=cmd.control_qubits,
-            dirty_qubit=workspace(cmd)[0])),
+    decompose_into_recursion,
 ]

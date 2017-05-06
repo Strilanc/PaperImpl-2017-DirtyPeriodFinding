@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from projectq.ops import Command, X, Swap
+from projectq.ops import X, Swap
 from projectq.types import Qureg, Qubit
 
 from dirty_period_finding.extensions import (
