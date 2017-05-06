@@ -6,26 +6,27 @@ from projectq.cengines import DecompositionRule
 from dirty_period_finding.gates import (
     ModularBimultiplicationGate,
     ModularScaledAdditionGate,
-    RotateBitsGate
+    RotateBitsGate,
+    ModularNegate,
 )
 
 
 def do_bimultiplication(gate, forward_reg, inverse_reg, controls):
     """
     Reversibly multiplies one register by a constant and another register by
-    the negation of the modular multiplicative inverse of that constant.
+    the modular multiplicative inverse of that constant.
 
-    N: len(input_reg) + len(target_reg) + len(controls)
+    N: len(forward_reg) + len(inverse_reg) + len(controls)
     Size: O(N lg N)
     Depth: O(N)
     Diagram:
-        c                   c
-       ━/━━━━━●━━━━        ━/━━━━━●━━━━━━━●━━━━━━━●━━━━━━━━●━━━
-        n ┌───┴───┐         n  ┌──┴──┐┌───┴───┐┌──┴──┐  ┌──┴──┐
-       ━/━┥ ×K%R  ┝━   =   ━/━━┥  A  ┝┥-AK⁻¹%R┝┥  A  ┝━━┥━╲ ╱━┝━
-        n ├───────┤         n  ├─────┤├───────┤├─────┤  │  ╳  │
-       ━/━┥×-K⁻¹%R┝━       ━/━━┥+AK%R┝┥   A   ┝┥+AK%R┝━━┥━╱ ╲━┝━
-          └───────┘            └─────┘└───────┘└─────┘  └─────┘
+        c                  c
+       ━/━━━━━●━━━        ━/━━━━━●━━━━━━━●━━━━━━━●━━━━━━●━━━━━━●━━━━
+        n ┌───┴──┐         n  ┌──┴──┐┌───┴───┐┌──┴──┐┌──┴──┐   │
+       ━/━┥ ×K%R ┝━   =   ━/━━┥  A  ┝┥-AK⁻¹%R┝┥  A  ┝┥━╲ ╱━┝━━━┿━━━━
+        n ├──────┤         n  ├─────┤├───────┤├─────┤│  ╳  │┌──┴──┐
+       ━/━┥×K⁻¹%R┝━       ━/━━┥+AK%R┝┥   A   ┝┥+AK%R┝┥━╱ ╲━┝┥×-1%R┝━
+          └──────┘            └─────┘└───────┘└─────┘└─────┘└─────┘
     Args:
         gate (ModularBimultiplicationGate):
             The gate being decomposed.
@@ -48,7 +49,7 @@ def do_bimultiplication(gate, forward_reg, inverse_reg, controls):
     scale_add & controls | (forward_reg, inverse_reg)
 
     RotateBitsGate(n) & controls | forward_reg + inverse_reg
-
+    ModularNegate(gate.modulus) & controls | inverse_reg
 
 decompose_into_adds_and_rotate = DecompositionRule(
     gate_class=ModularBimultiplicationGate,

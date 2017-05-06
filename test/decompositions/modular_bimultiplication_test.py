@@ -21,6 +21,7 @@ from dirty_period_finding.decompositions import (
     rotate_bits_rules,
     reverse_bits_rules,
     comparison_rules,
+    modular_negate_rules,
 )
 from dirty_period_finding.decompositions.modular_bimultiplication_rules import (
     decompose_into_adds_and_rotate,
@@ -55,6 +56,7 @@ def test_toffoli_size_of_bimultiplication():
             modular_double_rules,
             rotate_bits_rules,
             reverse_bits_rules,
+            modular_negate_rules,
             comparison_rules,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
@@ -72,8 +74,8 @@ def test_toffoli_size_of_bimultiplication():
 
 
 def test_bimultiplication_operation():
-    assert ModularBimultiplicationGate(7, 13).do_operation(1, 1) == (7, 11)
-    assert ModularBimultiplicationGate(7, 13).do_operation(2, 3) == (1, 7)
+    assert ModularBimultiplicationGate(7, 13).do_operation(1, 1) == (7, 2)
+    assert ModularBimultiplicationGate(7, 13).do_operation(2, 3) == (1, 6)
 
 
 def test_decompose_scaled_modular_addition_into_doubled_addition():
@@ -82,7 +84,7 @@ def test_decompose_scaled_modular_addition_into_doubled_addition():
             for h_modulus in cover(1 << (register_size - 1)):
                 modulus = h_modulus * 2 + 1
                 for factor in cover(modulus):
-                    if fractions.gcd(modulus, factor) != 1:
+                    if fractions.gcd(modulus, factor) != 1 or factor == 0:
                         continue
 
                     check_permutation_decomposition(
@@ -101,22 +103,22 @@ def test_diagram_decompose_into_doubled_addition():
         control_size=1)
     print(text_diagram)
     assert text_diagram == """
-|0>--------@---------------@----------------@------------@------
-    .------|------. .------|-------. .------|------. .---|----.
-|0>-|             |-|              |-|             |-|        |-
-    |             | |              | |             | |        |
-|0>-|             |-|              |-|             |-|        |-
-    |             | |              | |             | |        |
-|0>-|      A      |-|  +A*11 % 13  |-|      A      |-|        |-
-    |             | |              | |             | |        |
-|0>-|             |-|              |-|             |-|        |-
-    |-------------| |--------------| |-------------| |        |
-|0>-|             |-|              |-|             |-|  <<<4  |-
-    |             | |              | |             | |        |
-|0>-|             |-|              |-|             |-|        |-
-    |             | |              | |             | |        |
-|0>-|  +A*7 % 13  |-|      A       |-|  +A*7 % 13  |-|        |-
-    |             | |              | |             | |        |
-|0>-|             |-|              |-|             |-|        |-
-    `-------------` `--------------` `-------------` `--------`
+|0>--------@---------------@----------------@------------@------------@--------
+    .------|------. .------|-------. .------|------. .---|----.       |
+|0>-|             |-|              |-|             |-|        |-------|--------
+    |             | |              | |             | |        |       |
+|0>-|             |-|              |-|             |-|        |-------|--------
+    |             | |              | |             | |        |       |
+|0>-|      A      |-|  +A*11 % 13  |-|      A      |-|        |-------|--------
+    |             | |              | |             | |        |       |
+|0>-|             |-|              |-|             |-|        |-------|--------
+    |-------------| |--------------| |-------------| |        | .-----|------.
+|0>-|             |-|              |-|             |-|  <<<4  |-|            |-
+    |             | |              | |             | |        | |            |
+|0>-|             |-|              |-|             |-|        |-|            |-
+    |             | |              | |             | |        | |            |
+|0>-|  +A*7 % 13  |-|      A       |-|  +A*7 % 13  |-|        |-|  *-1 % 13  |-
+    |             | |              | |             | |        | |            |
+|0>-|             |-|              |-|             |-|        |-|            |-
+    `-------------` `--------------` `-------------` `--------` `------------`
     """.strip()

@@ -82,13 +82,6 @@ def sample_period(eng,
     fixup_gate = ModularBimultiplicationGate(fixup_factor, modulus)
     fixup_gate | (ancilla_qureg, work_qureg)
 
-    Measure | ancilla_qureg[-2]
-    Measure | ancilla_qureg[-1]
-    eng.flush()
-    sign_flip = bool(ancilla_qureg[-2]) or bool(ancilla_qureg[-1])
-    if sign_flip:
-        ConstPivotFlipGate(modulus + 1) | ancilla_qureg
-
     # Estimate period based on denominator of closest fraction.
     return frac.limit_denominator(modulus - 1).denominator
 
@@ -102,6 +95,7 @@ def main():
             modular_addition_rules,
             modular_bimultiplication_rules,
             modular_double_rules,
+            modular_negate_rules,
             modular_scaled_addition_rules,
             multi_not_rules,
             offset_rules,
@@ -118,12 +112,12 @@ def main():
         ),
     ])
 
-    modulus = 53 * 17
+    modulus = 11 * 5
     n = int(math.ceil(math.log(modulus, 2)))
     base = 6
 
     ancilla_qureg = eng.allocate_qureg(n)
-    for q in ancilla_qureg[:-2]:
+    for q in ancilla_qureg[:-1]:
         if random.random() < 0.5:
             X | q
     Measure | ancilla_qureg

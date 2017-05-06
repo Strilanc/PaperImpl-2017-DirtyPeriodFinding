@@ -10,7 +10,8 @@ import random
 import numpy as np
 from projectq import MainEngine
 from projectq.backends import Simulator
-from projectq.cengines import DummyEngine
+from projectq.cengines import DummyEngine, DecompositionRule
+from projectq.meta import Dagger
 from projectq.ops import H, All, Rz, Measure
 
 from dirty_period_finding.extensions import (
@@ -255,6 +256,17 @@ def cover(n, cut=10):
     return random.randint(0, n - 1),
 
 
+def _inverse_decomposition_rule(gate, rule):
+    def decomp(cmd):
+        with Dagger(cmd.engine):
+            rule.gate_decomposer(cmd.get_inverse())
+
+    return DecompositionRule(
+        gate.get_inverse().__class__,
+        decomp,
+        lambda cmd: rule.gate_recognizer(cmd.get_inverse()))
+
+
 def check_permutation_decomposition(gate,
                                     decomposition_rule,
                                     register_sizes,
@@ -271,6 +283,32 @@ def check_permutation_decomposition(gate,
         workspace (int):
         register_limits (list[int]):
     """
+
+    check_permutation_decomposition_helper(gate,
+                                           decomposition_rule,
+                                           register_sizes,
+                                           control_size,
+                                           workspace,
+                                           register_limits)
+
+    inv_decomposition_rule = _inverse_decomposition_rule(
+        gate,
+        decomposition_rule)
+
+    check_permutation_decomposition_helper(gate.get_inverse(),
+                                           inv_decomposition_rule,
+                                           register_sizes,
+                                           control_size,
+                                           workspace,
+                                           register_limits)
+
+
+def check_permutation_decomposition_helper(gate,
+                                           decomposition_rule,
+                                           register_sizes,
+                                           control_size=0,
+                                           workspace=0,
+                                           register_limits=None):
     assert isinstance(gate, decomposition_rule.gate_class)
     assert not register_limits or len(register_limits) == len(register_sizes)
 

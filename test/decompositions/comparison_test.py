@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from dirty_period_finding.decompositions.comparison_rules import (
     decompose_less_than_into_overflow,
+    decompose_less_than_low_workspace,
     decompose_overflow,
     decompose_xor_offset_carry_signals,
 )
@@ -80,6 +81,19 @@ def test_decompose_less_than_into_overflow():
 
                 check_permutation_decomposition(
                     decomposition_rule=decompose_less_than_into_overflow,
+                    gate=LessThanConstantGate(limit),
+                    register_sizes=[register_size, 1],
+                    workspace=register_size - 1,
+                    control_size=control_size)
+
+
+def test_decompose_less_than_low_workspace():
+    for register_size in range(1, 100):
+        for control_size in range(3):
+            for limit in cover((1 << register_size) + 1):
+
+                check_permutation_decomposition(
+                    decomposition_rule=decompose_less_than_low_workspace,
                     gate=LessThanConstantGate(limit),
                     register_sizes=[register_size, 1],
                     control_size=control_size)
@@ -161,19 +175,46 @@ def test_diagram_decompose_less_than_into_overflow():
         gate=LessThanConstantGate(7),
         decomposition_rule=decompose_less_than_into_overflow,
         register_sizes=[4, 1],
+        workspace=3,
         control_size=1)
     print(text_diagram)
     assert text_diagram == """
-|0>-----------@-----------@-
-    .---------|---------. |
-|0>-|                   |-|-
-    |                   | |
-|0>-|                   |-|-
-    |                   | |
-|0>-|         A         |-|-
-    |                   | |
-|0>-|                   |-|-
-    |-------------------| |
-|0>-|  Xoverflow(A+=9)  |-X-
-    `-------------------`
+|0>---------------@-----------@-
+        .---------|---------. |
+|0>-----|                   |-|-
+        |                   | |
+|0>-----|                   |-|-
+        |                   | |
+|0>-----|         A         |-|-
+        |                   | |
+|0>-----|                   |-|-
+        |-------------------| |
+|0>-----|  Xoverflow(A+=9)  |-X-
+        `-------------------`
+|0>-???-------------------------
+|0>-???-------------------------
+|0>-???-------------------------
+        """.strip()
+
+
+def test_diagram_decompose_less_than_low_workspace():
+    text_diagram = decomposition_to_ascii(
+        gate=LessThanConstantGate(7),
+        decomposition_rule=decompose_less_than_low_workspace,
+        register_sizes=[4, 1],
+        control_size=1)
+    print(text_diagram)
+    assert text_diagram == """
+|0>----@--------@-----
+    .--|---. .--|---.
+|0>-|      |-|      |-
+    |      | |      |
+|0>-|      |-|      |-
+    |      | |      |
+|0>-|  -7  |-|  +7  |-
+    |      | |      |
+|0>-|      |-|      |-
+    |      | `------`
+|0>-|      |----------
+    `------`
         """.strip()

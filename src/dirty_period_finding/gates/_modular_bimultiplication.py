@@ -21,7 +21,7 @@ class ModularBimultiplicationGate(BasicMathGateEx):
         if x >= self.modulus or y >= self.modulus:
             return x, y
         return ((x * self.factor) % self.modulus,
-                (y * -self.inverse_factor) % self.modulus)
+                (y * self.inverse_factor) % self.modulus)
 
     def get_inverse(self):
         return ModularBimultiplicationGate(

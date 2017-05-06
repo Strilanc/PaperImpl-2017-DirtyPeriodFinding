@@ -14,6 +14,7 @@ from dirty_period_finding.gates import (
     PredictOffsetOverflowGate,
     X,
     XorOffsetCarrySignalsGate,
+    OffsetGate,
 )
 
 
@@ -164,7 +165,7 @@ def do_comparison_to_overflow(gate, comparand_reg, target_bit, controls):
             The gate to decompose, containing the constant to compare against.
         comparand_reg (projectq.types.Qureg):
             The register that we want to compare against a constant.
-        target_bit (projectq.types.Qubit):
+        target_bit (projectq.types.Qureg):
             The bit to toggle if the comparison is satisfied.
         controls (list[projectq.types.Qubit]):
             Conditions the operation.
@@ -182,6 +183,36 @@ def do_comparison_to_overflow(gate, comparand_reg, target_bit, controls):
     g = PredictOffsetOverflowGate(overflow_val - gate.comparand)
     g & controls | (comparand_reg, target_bit)
     X & controls | target_bit
+
+
+def do_add_subtract_comparison(gate, comparand_reg, target_bit, controls):
+    """
+    N: len(query_reg)
+    C: len(controls)
+    Size: O(N + C)
+    Depth: O(N + C)
+    Args:
+        gate (LessThanConstantGate):
+            The gate to decompose, containing the constant to compare against.
+        comparand_reg (projectq.types.Qureg):
+            The register that we want to compare against a constant.
+        target_bit (projectq.types.Qureg):
+            The bit to toggle if the comparison is satisfied.
+        controls (list[projectq.types.Qubit]):
+            Conditions the operation.
+    """
+    # Trivial case: can't be satisfied.
+    if gate.comparand <= 0:
+        return
+
+    # Trivial case: always satisfied.
+    overflow_val = 1 << len(comparand_reg)
+    if gate.comparand >= overflow_val:
+        X & controls | target_bit
+        return
+
+    OffsetGate(-gate.comparand) & controls | comparand_reg + target_bit
+    OffsetGate(gate.comparand) & controls | comparand_reg
 
 
 decompose_xor_offset_carry_signals = DecompositionRule(
@@ -204,7 +235,16 @@ decompose_overflow = DecompositionRule(
 
 decompose_less_than_into_overflow = DecompositionRule(
     gate_class=LessThanConstantGate,
+    gate_recognizer=min_workspace_vs_reg1(1, offset=-1),
     gate_decomposer=lambda cmd: do_comparison_to_overflow(
+        gate=cmd.gate,
+        comparand_reg=cmd.qubits[0],
+        target_bit=cmd.qubits[1],
+        controls=cmd.control_qubits))
+
+decompose_less_than_low_workspace = DecompositionRule(
+    gate_class=LessThanConstantGate,
+    gate_decomposer=lambda cmd: do_add_subtract_comparison(
         gate=cmd.gate,
         comparand_reg=cmd.qubits[0],
         target_bit=cmd.qubits[1],
@@ -214,5 +254,6 @@ decompose_less_than_into_overflow = DecompositionRule(
 all_defined_decomposition_rules = [
     decompose_xor_offset_carry_signals,
     decompose_less_than_into_overflow,
+    decompose_less_than_low_workspace,
     decompose_overflow,
 ]
