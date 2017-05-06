@@ -44,12 +44,14 @@ def do_rotation(target_reg, amount, controls):
         ReverseBits & controls | t
 
 
+decompose_into_reverses = DecompositionRule(
+    gate_class=RotateBitsGate,
+    gate_decomposer=lambda cmd: do_rotation(
+        target_reg=cmd.qubits[0],
+        controls=cmd.control_qubits,
+        amount=cmd.gate.amount))
+
+
 all_defined_decomposition_rules = [
-    # Replace rotations with reversals.
-    DecompositionRule(
-        gate_class=RotateBitsGate,
-        gate_decomposer=lambda cmd: do_rotation(
-            target_reg=cmd.qubits[0],
-            controls=cmd.control_qubits,
-            amount=cmd.gate.amount)),
+    decompose_into_reverses,
 ]

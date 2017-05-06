@@ -171,21 +171,27 @@ def do_controlled_multi_swap(reg1, reg2, dirty, controls):
         X & reg1[i] | reg2[i]
 
 
+decompose_into_cswaps = DecompositionRule(
+    gate_class=ReverseBitsGate,
+    gate_recognizer=max_controls(1),
+    gate_decomposer=lambda cmd: do_naive_bit_reverse(
+        target_reg=cmd.qubits[0],
+        controls=cmd.control_qubits))
+
+
+decompose_into_big_swap = DecompositionRule(
+    gate_class=ReverseBitsGate,
+    gate_recognizer=min_controls(2),
+    gate_decomposer=lambda cmd: do_efficient_controlled_bit_reverse(
+        target_reg=cmd.qubits[0],
+        controls=cmd.control_qubits))
+
+
 all_defined_decomposition_rules = [
     # When there aren't many controls, just do a bunch of C-Swaps.
-    DecompositionRule(
-        gate_class=ReverseBitsGate,
-        gate_recognizer=max_controls(1),
-        gate_decomposer=lambda cmd: do_naive_bit_reverse(
-            target_reg=cmd.qubits[0],
-            controls=cmd.control_qubits)),
+    decompose_into_cswaps,
 
     # When there are more controls, do part of the operation then use the
     # free'd up workspace to toggle-control the rest.
-    DecompositionRule(
-        gate_class=ReverseBitsGate,
-        gate_recognizer=min_controls(2),
-        gate_decomposer=lambda cmd: do_efficient_controlled_bit_reverse(
-            target_reg=cmd.qubits[0],
-            controls=cmd.control_qubits)),
+    decompose_into_big_swap,
 ]
