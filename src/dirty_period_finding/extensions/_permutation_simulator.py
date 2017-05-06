@@ -52,6 +52,7 @@ class PermutationSimulator(BasicEngine):
         Returns:
             bool:
         """
+        assert not register_limits or len(quregs) == len(register_limits)
         actual = self.get_permutation(quregs)
         ns = tuple(len(reg) for reg in quregs)
         for i in range(len(self._states)):

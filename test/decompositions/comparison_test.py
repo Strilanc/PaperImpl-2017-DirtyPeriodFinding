@@ -2,33 +2,29 @@
 from __future__ import division
 from __future__ import unicode_literals
 
-from projectq.cengines import DecompositionRuleSet
-
-from dirty_period_finding.decompositions import (
-    offset_rules,
-    multi_not_rules,
-)
 from dirty_period_finding.decompositions.comparison_rules import (
-    do_predict_carry_signals,
     decompose_less_than_into_overflow,
     decompose_overflow,
-)
-from dirty_period_finding.extensions import (
-    LimitedCapabilityEngine,
-    AutoReplacerEx,
+    decompose_xor_offset_carry_signals,
 )
 from dirty_period_finding.gates import (
     LessThanConstantGate,
     PredictOffsetOverflowGate,
+    XorOffsetCarrySignalsGate,
 )
-from .._test_util import check_permutation_circuit, decomposition_to_ascii, check_permutation_decomposition, cover
-
-
-def _carry_signals(x, y):
-    return ((x + y) ^ x ^ y) >> 1
+from .._test_util import (
+    decomposition_to_ascii,
+    check_permutation_decomposition,
+    cover,
+)
 
 
 def test_carry_signals():
+
+    def _carry_signals(x, y):
+        z, t = XorOffsetCarrySignalsGate(x).do_operation((8, 8), (y, 0))
+        assert z == y
+        return t
     assert _carry_signals(0b001, 0b001) == 0b001
     assert _carry_signals(0b010, 0b010) == 0b010
     assert _carry_signals(0b001, 0b111) == 0b111
@@ -38,28 +34,6 @@ def test_carry_signals():
     assert _carry_signals(0b101, 0b001) == 0b001
     assert _carry_signals(0b1000000, 0b1000000) == 0b1000000
     assert _carry_signals(0b1001000, 0b1000001) == 0b1000000
-
-
-def test_do_predict_carry_signals_small():
-    for n in [0, 1, 2, 3, 4]:
-        for offset in range(1 << n):
-            offset_bits = [bool((offset >> i) & 1) for i in range(n)]
-
-            check_permutation_circuit(
-                register_sizes=[n, n],
-                permutation=lambda _, (q, t):
-                    (q, t ^ _carry_signals(q, offset)),
-                engine_list=[
-                    AutoReplacerEx(DecompositionRuleSet(modules=[
-                        offset_rules,
-                        multi_not_rules,
-                    ])),
-                    LimitedCapabilityEngine(allow_toffoli=True),
-                ],
-                actions=lambda eng, regs: do_predict_carry_signals(
-                    offset_bits=offset_bits,
-                    query_reg=regs[0],
-                    target_reg=regs[1]))
 
 
 def test_predict_overflow_operation():
@@ -74,6 +48,16 @@ def test_predict_overflow_operation():
 
     assert PredictOffsetOverflowGate(7).do_operation((4, 1), (9, 0)) == (9, 1)
     assert PredictOffsetOverflowGate(7).do_operation((4, 1), (9, 1)) == (9, 0)
+
+
+def test_decompose_xor_offset_carry_signals():
+    for register_size in range(1, 50):
+        for offset in cover(1 << register_size):
+
+            check_permutation_decomposition(
+                decomposition_rule=decompose_xor_offset_carry_signals,
+                gate=XorOffsetCarrySignalsGate(offset),
+                register_sizes=[register_size, register_size])
 
 
 def test_decompose_overflow():
@@ -101,6 +85,39 @@ def test_decompose_less_than_into_overflow():
                     control_size=control_size)
 
 
+def test_diagram_decompose_xor_offset_carry_signals():
+    text_diagram = decomposition_to_ascii(
+        gate=XorOffsetCarrySignalsGate(9),
+        decomposition_rule=decompose_xor_offset_carry_signals,
+        register_sizes=[6, 6])
+    print(text_diagram)
+    assert text_diagram == """
+|0>-X-----------@-----------------X-
+                |
+|0>-----------@-|-------@-----------
+              | |       |
+|0>---------@-|-|-------|-@---------
+            | | |       | |
+|0>-X-----@-|-|-|---@---|-|-@-----X-
+          | | | |   |   | | |
+|0>-----@-|-|-|-|---|---|-|-|-@-----
+        | | | | |   |   | | | |
+|0>---@-|-|-|-|-|---|---|-|-|-|-@---
+      | | | | | |   |   | | | | |
+|0>---|-|-|-|-@-X-X-|---@-|-|-|-|---
+      | | | | |     |   | | | | |
+|0>---|-|-|-@-X-----|---X-@-|-|-|---
+      | | | |       |     | | | |
+|0>---|-|-@-X-------|-----X-@-|-|---
+      | | |         |       | | |
+|0>---|-@-X---------X-X-----X-@-|---
+      | |                     | |
+|0>---@-X---------------------X-@---
+      |                         |
+|0>---X-------------------------X---
+    """.strip()
+
+
 def test_diagram_decompose_overflow():
     text_diagram = decomposition_to_ascii(
         gate=PredictOffsetOverflowGate(9),
@@ -110,31 +127,31 @@ def test_diagram_decompose_overflow():
         control_size=1)
     print(text_diagram)
     assert text_diagram == """
-|0>-------------------------------------@---------------------------------@-
-                                        |                                 |
-|0>-???---------@---X---------@---------|---------@---X---------@---------|-
-                |   |         |         |         |   |         |         |
-|0>-???-------@-X---|---------X-@-------|-------@-X---|---------X-@-------|-
-              | |   |         | |       |       | |   |         | |       |
-|0>-???-----@-X-|---|---------|-X-@-----|-----@-X-|---|---------|-X-@-----|-
-            | | |   |         | | |     |     | | |   |         | | |     |
-|0>-???---@-X-|-|---|-----X---|-|-X-@---|---@-X-|-|---|-----X---|-|-X-@---|-
-          | | | |   |     |   | | | |   |   | | | |   |     |   | | | |   |
-|0>-???---X-|-|-|---|-----|---|-|-|-X---@---X-|-|-|---|-----|---|-|-|-X---@-
-          | | | |   |     |   | | | |   |   | | | |   |     |   | | | |   |
-|0>-----X-|-|-|-|-X-@-X---|---|-|-|-|-X-|-X-|-|-|-|-X-@-X---|---|-|-|-|-X-|-
-          | | | |         |   | | | |   |   | | | |         |   | | | |   |
-|0>-------|-|-|-@---------|---@-|-|-|---|---|-|-|-@---------|---@-|-|-|---|-
-          | | |           |     | | |   |   | | |           |     | | |   |
-|0>-------|-|-@-----------|-----@-|-|---|---|-|-@-----------|-----@-|-|---|-
-          | |             |       | |   |   | |             |       | |   |
-|0>-----X-|-@-----------X-@-X-----@-|-X-|-X-|-@-----------X-@-X-----@-|-X-|-
-          |                         |   |   |                         |   |
-|0>-------@-------------------------@---|---@-------------------------@---|-
-                                        |                                 |
-|0>-------------------------------------@---------------------------------@-
-                                        |                                 |
-|0>-------------------------------------X---------------------------------X-
+|0>--------------------------@----------------------@-
+        .------------------. | .------------------. |
+|0>-???-|                  |-|-|                  |-|-
+        |                  | | |                  | |
+|0>-???-|                  |-|-|                  |-|-
+        |                  | | |                  | |
+|0>-???-|  Xcarries(A, 9)  |-|-|  Xcarries(A, 9)  |-|-
+        |                  | | |                  | |
+|0>-???-|                  |-|-|                  |-|-
+        |                  | | |                  | |
+|0>-???-|                  |-@-|                  |-@-
+        |------------------| | |------------------| |
+|0>-----|                  |-|-|                  |-|-
+        |                  | | |                  | |
+|0>-----|                  |-|-|                  |-|-
+        |                  | | |                  | |
+|0>-----|        A         |-|-|        A         |-|-
+        |                  | | |                  | |
+|0>-----|                  |-|-|                  |-|-
+        |                  | | |                  | |
+|0>-----|                  |-|-|                  |-|-
+        `------------------` | `------------------` |
+|0>--------------------------@----------------------@-
+                             |                      |
+|0>--------------------------X----------------------X-
     """.strip()
 
 

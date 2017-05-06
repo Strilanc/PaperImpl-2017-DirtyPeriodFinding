@@ -6,16 +6,18 @@ from projectq.cengines import DecompositionRule
 from dirty_period_finding.extensions import (
     workspace,
     min_workspace_vs_reg1,
+    max_controls,
 )
 from dirty_period_finding.gates import (
     LessThanConstantGate,
     MultiNot,
     PredictOffsetOverflowGate,
     X,
+    XorOffsetCarrySignalsGate,
 )
 
 
-def do_predict_carry_signals(offset_bits, query_reg, target_reg):
+def do_predict_carry_signals(offset, query_reg, target_reg):
     """
     Source:
         Thomas Häner, Martin Roetteler, and Krysta M. Svore, 2016.
@@ -33,15 +35,15 @@ def do_predict_carry_signals(offset_bits, query_reg, target_reg):
              │││││             │││││             │││││
              │││││             │││││             │││││
              │││││             │││││             │││││
-        . ───⊕┼┼┼┼─────────────●┼┼┼┼─────────────⊕┼┼┼┼──
+        . ───⊕┼┼┼┼─────────────○┼┼┼┼─────────────⊕┼┼┼┼──
         .     ││││             │││││              ││││
-        q ────⊕┼┼┼────────●────┼●┼┼┼────●─────────⊕┼┼┼──
+        q ────⊕┼┼┼────────●────┼○┼┼┼────●─────────⊕┼┼┼──
         u      │││        │    │││││    │          │││
-        e ─────⊕┼┼──────●─┼────┼┼●┼┼────┼─●────────⊕┼┼──
+        e ─────⊕┼┼──────●─┼────┼┼○┼┼────┼─●────────⊕┼┼──
         r       ││      │ │    │││││    │ │         ││
-        y ──────⊕┼────●─┼─┼────┼┼┼●┼────┼─┼─●───────⊕┼──
+        y ──────⊕┼────●─┼─┼────┼┼┼○┼────┼─┼─●───────⊕┼──
         .        │    │ │ │    │││││    │ │ │        │
-        . ───────⊕──●─┼─┼─┼────┼┼┼┼●────┼─┼─┼─●──────⊕──
+        . ───────⊕──●─┼─┼─┼────┼┼┼┼○────┼─┼─┼─●──────⊕──
                     │ │ │ │    │││││    │ │ │ │
                     │ │ │ │    │││││    │ │ │ │
                     │ │ │ │    │││││    │ │ │ │
@@ -55,14 +57,17 @@ def do_predict_carry_signals(offset_bits, query_reg, target_reg):
         .           │              │          │
         . ──────────⊕──────────────⊕──────────⊕─────────
     Args:
-        offset_bits (list[bool]):
+        offset (int):
         query_reg (projectq.types.Qureg):
         target_reg (projectq.types.Qureg):
     """
-    n = len(offset_bits)
-    target_ons = [query_reg[i] for i in range(n) if offset_bits[i]]
+    n = len(query_reg)
+    assert len(target_reg) == n
+    assert 0 <= offset < 1 << n
+    offset_bits = [bool((offset >> i) & 1) for i in range(n)]
 
-    MultiNot | target_ons
+    offset_bit_targets = [query_reg[i] for i in range(n) if offset_bits[i]]
+    MultiNot | offset_bit_targets
 
     # Sweep high-to-low.
     for i in range(1, n)[::-1]:
@@ -71,15 +76,14 @@ def do_predict_carry_signals(offset_bits, query_reg, target_reg):
     # Twiddle target.
     for i in range(n):
         if offset_bits[i]:
-            X | query_reg[i]
             X & query_reg[i] | target_reg[i]
-            X | query_reg[i]
+            X | target_reg[i]
 
     # Sweep low-to-high.
     for i in range(1, n):
         X & query_reg[i] & target_reg[i - 1] | target_reg[i]
 
-    MultiNot | target_ons
+    MultiNot | offset_bit_targets
 
 
 def do_predict_overflow(offset, query_reg, target_bit, controls, dirty_reg):
@@ -129,22 +133,24 @@ def do_predict_overflow(offset, query_reg, target_bit, controls, dirty_reg):
     assert len(dirty_reg) == n - 1
     assert 0 <= offset < 1 << n
 
-    offset_bits = [bool((offset >> i) & 1) for i in range(n)]
+    m = 1 << (n-1)
+    offset_low, offset_top = offset & ~m, offset & m
+    query_low, query_top = query_reg[:-1], query_reg[-1]
 
-    if offset_bits[-1]:
-        X & controls & query_reg[-1] | target_bit
+    if offset_top:
+        X & controls & query_top | target_bit
 
     if n == 1:
         return
 
     for _ in range(2):
-        do_predict_carry_signals(offset_bits[:-1], query_reg[:-1], dirty_reg)
+        XorOffsetCarrySignalsGate(offset_low) | (query_reg[:-1], dirty_reg)
 
-        if offset_bits[-1]:
-            X | query_reg[-1]
-        X & controls & query_reg[-1] & dirty_reg[-1] | target_bit
-        if offset_bits[-1]:
-            X | query_reg[-1]
+        if offset_top:
+            X | query_top
+        X & controls & query_top & dirty_reg[-1] | target_bit
+        if offset_top:
+            X | query_top
 
 
 def do_comparison_to_overflow(gate, comparand_reg, target_bit, controls):
@@ -178,6 +184,14 @@ def do_comparison_to_overflow(gate, comparand_reg, target_bit, controls):
     X & controls | target_bit
 
 
+decompose_xor_offset_carry_signals = DecompositionRule(
+    gate_class=XorOffsetCarrySignalsGate,
+    gate_recognizer=max_controls(0),
+    gate_decomposer=lambda cmd: do_predict_carry_signals(
+        offset=cmd.gate.offset,
+        query_reg=cmd.qubits[0],
+        target_reg=cmd.qubits[1]))
+
 decompose_overflow = DecompositionRule(
     gate_class=PredictOffsetOverflowGate,
     gate_recognizer=min_workspace_vs_reg1(1, offset=-1),
@@ -198,6 +212,7 @@ decompose_less_than_into_overflow = DecompositionRule(
 
 
 all_defined_decomposition_rules = [
-    decompose_overflow,
+    decompose_xor_offset_carry_signals,
     decompose_less_than_into_overflow,
+    decompose_overflow,
 ]

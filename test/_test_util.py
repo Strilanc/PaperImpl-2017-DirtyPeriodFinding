@@ -10,15 +10,13 @@ import random
 import numpy as np
 from projectq import MainEngine
 from projectq.backends import Simulator
-from projectq.cengines import DummyEngine, DecompositionRuleSet
+from projectq.cengines import DummyEngine
 from projectq.ops import H, All, Rz, Measure
 
 from dirty_period_finding.extensions import (
     ClassicalSimulator,
     PermutationSimulator,
     commands_to_ascii_circuit,
-    AutoReplacerEx,
-    LimitedCapabilityEngine,
     CommandEx,
     BasicGateEx,
 )
@@ -108,6 +106,7 @@ def check_permutation_circuit(register_sizes,
     permutation_matches = sim.permutation_equals(registers,
                                                  permutation,
                                                  register_limits)
+    assert register_limits is None or len(registers) == len(register_limits)
     if not permutation_matches:
         example_count = 0
         print(commands_to_ascii_circuit(rec.received_commands))
@@ -217,6 +216,7 @@ def fuzz_permutation_circuit(register_sizes,
     n = len(register_sizes)
     if register_limits is None:
         register_limits = [1 << size for size in register_sizes]
+    assert len(register_limits) == n
     inputs = tuple(random.randint(0, limit - 1) for limit in register_limits)
     outputs = [e % (1 << d)
                for e, d in zip(permutation(register_sizes, inputs),
@@ -272,6 +272,7 @@ def check_permutation_decomposition(gate,
         register_limits (list[int]):
     """
     assert isinstance(gate, decomposition_rule.gate_class)
+    assert not register_limits or len(register_limits) == len(register_sizes)
 
     if control_size + workspace + sum(register_sizes) <= 8:
         test_method = check_permutation_circuit
@@ -296,7 +297,8 @@ def check_permutation_decomposition(gate,
         register_sizes=[control_size, workspace] + register_sizes,
         register_limits=(None
                          if register_limits is None
-                         else [1 << control_size] + register_limits),
+                         else [1 << control_size, 1 << workspace] +
+                              register_limits),
         permutation=apply_permutation,
         actions=apply_decomposition)
 

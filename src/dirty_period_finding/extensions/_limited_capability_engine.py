@@ -113,6 +113,8 @@ class LimitedCapabilityEngine(BasicEngine):
 
         if self.allow_arithmetic and isinstance(cmd.gate, BasicMathGate):
             return True
+        if self.allow_arithmetic and isinstance(cmd.gate, XGate):
+            return True
 
         if (self.allow_toffoli and isinstance(cmd.gate, XGate) and
                 len(cmd.control_qubits) <= 2):

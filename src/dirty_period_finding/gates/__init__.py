@@ -12,6 +12,7 @@ from ._phase_gradient import PhaseGradientGate, PhaseGradient
 from ._pivot_flip import PivotFlipGate, ConstPivotFlipGate, PivotFlip
 from ._comparison import (
     PredictOffsetOverflowGate,
+    XorOffsetCarrySignalsGate,
     LessThanConstantGate,
 )
 from ._reverse_bits import ReverseBitsGate, ReverseBits
