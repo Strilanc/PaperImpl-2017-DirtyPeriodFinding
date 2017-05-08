@@ -21,7 +21,6 @@ from dirty_period_finding.decompositions.addition_rules import (
 )
 from dirty_period_finding.extensions import (
     LimitedCapabilityEngine,
-    Swap,
     AutoReplacerEx,
 )
 from dirty_period_finding.gates import (
