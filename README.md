@@ -1,11 +1,23 @@
-# Period Finding with n+2 clean qubits and n-1 dirty qubits
+# Dirty Period Finding with 2n+1 qubits
 
-This repository contains code for generating and validating the constructions
-from a paper [work in progress].
+This repository contains code for generating and validating the
+constructions from my [work in progress]
+"Factoring with n+2 clean qubits and n-1 dirty qubits".
 
-# Table of Constructions
+# Build Instructions
 
-| Name | In Paper | In Source | In Quirk |
+[Work in Progress]
+
+0. Have git and pip installed.
+1. Clone the repository.
+2. pip install projectq
+3. `pytest`
+4. [fiddle with python path?]
+5. `cd src`, `python dirty_period_finding/find_period.py`
+
+# Table of Circuit Constructions
+
+| Name | In Paper | In Source | In [Quirk](http://algassert.com/quirk) |
 | --- | --- | --- | --- |
 | Find Period | ![3][3] <br> fig [1][1], [2][2], [3][3] | ??? | [period-finding R=55 B=26 p=10](http://algassert.com/quirk#circuit=%7B%22cols%22%3A%5B%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22~mdaf%22%2C1%2C1%2C1%2C%22~h1nm%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%7B%22id%22%3A%22setR%22%2C%22arg%22%3A55%7D%2C1%2C1%2C1%2C%7B%22id%22%3A%22setB%22%2C%22arg%22%3A26%7D%5D%2C%5B%5D%2C%5B%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%2C%22X%22%5D%2C%5B%22inputA10%22%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22*BToAmodR6%22%5D%2C%5B%22QFT%E2%80%A010%22%5D%2C%5B%22Chance10%22%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22Chance6%22%5D%5D%2C%22gates%22%3A%5B%7B%22id%22%3A%22~h1nm%22%2C%22name%22%3A%22guess%3A%22%2C%22matrix%22%3A%22%7B%7B1%2C0%2C0%2C0%7D%2C%7B0%2C1%2C0%2C0%7D%2C%7B0%2C0%2C1%2C0%7D%2C%7B0%2C0%2C0%2C1%7D%7D%22%7D%2C%7B%22id%22%3A%22~mdaf%22%2C%22name%22%3A%22input%3A%22%2C%22matrix%22%3A%22%7B%7B1%2C0%2C0%2C0%7D%2C%7B0%2C1%2C0%2C0%7D%2C%7B0%2C0%2C1%2C0%7D%2C%7B0%2C0%2C0%2C1%7D%7D%22%7D%5D%7D) |
 | Bimultiply mod R | ![4][4] <br> fig [4][4] | [modular_bimultiplication_rules.py](src/dirty_period_finding/decompositions/modular_bimultiplication_rules.py) | ??? |
