@@ -6,7 +6,7 @@ from projectq import MainEngine
 from projectq.backends import ResourceCounter
 from projectq.backends import Simulator
 from projectq.cengines import BasicEngine, UnsupportedEngineError
-from projectq.ops import Command
+from projectq.ops import Command, Measure
 from projectq.types import Qubit, Qureg
 
 
@@ -150,6 +150,22 @@ def MainEngine_init(self, backend=None, engine_list=None):
     self._measurements = dict()
     self.dirty_qubits = set()
 
+
+def measure_register(qureg):
+    if not len(qureg):
+        return 0
+    eng = [q.engine for q in qureg][0]
+    Measure | qureg
+    eng.flush()
+    return sum(int(qureg[i]) << i for i in range(len(qureg)))
+
+
+def measure_qubit(qubit):
+    Measure | qubit
+    qubit.engine.flush()
+    return bool(qubit)
+
+
 Command.__str__ = command_str
 Command.__repr__ = command_str
 Qureg.__str__ = qureg_str
@@ -159,3 +175,5 @@ Qubit.__del__ = lambda x: None
 Qureg.__int__ = lambda x: sum(int(x[i]) << i for i in range(len(x)))
 BasicEngine.__del__ = lambda x: None
 MainEngine.__init__ = MainEngine_init
+Qureg.measure = measure_register
+Qubit.measure = measure_qubit

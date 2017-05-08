@@ -22,6 +22,15 @@ from dirty_period_finding.extensions import (
 from dirty_period_finding.gates import *
 
 
+def measure_register(qureg):
+    if not len(qureg):
+        return 0
+    eng = [q.engine for q in qureg][0]
+    Measure | qureg
+    eng.flush()
+    return int(qureg)
+
+
 def sample_period(eng,
                   base,
                   modulus,
@@ -36,7 +45,7 @@ def sample_period(eng,
         modulus (int):
         precision (int):
             The number of iterations.
-        phase_qubit (Qubit):
+        phase_qubit (Qureg):
             A clean zero-initialized qubit.
         work_qureg (Qureg):
             A clean zero-initialized register with lg(modulus) bits.
@@ -62,9 +71,7 @@ def sample_period(eng,
         Z**frac | phase_qubit
         H | phase_qubit
 
-        Measure | phase_qubit
-        eng.flush()
-        b = bool(phase_qubit)
+        b = phase_qubit.measure()
         if b:
             X | phase_qubit
             frac += Fraction(1, 2 << i)
@@ -120,9 +127,7 @@ def main():
     for q in ancilla_qureg[:-1]:
         if random.random() < 0.5:
             X | q
-    Measure | ancilla_qureg
-    eng.flush()
-    before = int(ancilla_qureg)
+    before = ancilla_qureg.measure()
 
     p = sample_period(eng,
                       base=base,
@@ -132,9 +137,7 @@ def main():
                       work_qureg=eng.allocate_qureg(n),
                       ancilla_qureg=ancilla_qureg)
 
-    Measure | ancilla_qureg
-    eng.flush()
-    after = int(ancilla_qureg)
+    after = ancilla_qureg.measure()
     print("before", before, "after", after)
     u = pow(base, p, modulus)
     print("result", p, "u", u if u < modulus / 2 else '-' + str(-u % modulus))
