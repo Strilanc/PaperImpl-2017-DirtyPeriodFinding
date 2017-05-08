@@ -242,7 +242,7 @@ To perform a pivot-flip efficiently, we use the fact that $x \rightarrow \lnot(x
 However, because $x \rightarrow \lnot(x - A)$ is its own inverse, the operation can be ``toggle-controlled'', where the operation undoes itself unless a controlling qubit is toggled between two applications.
 Also, because the operation doesn't change whether a given value is below the pivot, the controlling qubit can be toggled by a comparison of the target against the pivot $A$ even though the target is being operated on.
 
-See figure \ref{fig:controlled-pivot-flip} for our pivot-flip construction.
+See figures \ref{fig:controlled-pivot-flip} and \ref{fig:controlled-const-pivot-flip} for the circuit diagrams.
 For states that are less than the pivot $A$, the comparison against the pivot keeps toggling the ancilla and exactly one of the controlled subtract-and-inverts will fire.
 For other states, the ancilla does not change and so the subtract-and-inverse happens either no times or two times (undoing itself) for a net effect of no effect.
 
@@ -266,7 +266,7 @@ This distinction matters because the constant-offset construction uses $O(n \lg 
     Controlled pivot-flip circuit with a constant pivot.
     Uses $2$ dirty ancilla, $O(c + n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
   }
-  \label{fig:controlled-pivot-flip}
+  \label{fig:controlled-const-pivot-flip}
 \end{figure}
 
 
@@ -397,7 +397,7 @@ See figure \ref{fig:controlled-increment-odd}.
 \subsection{Bit Swaps, Rotations, and Reversals}
 
 Bit permuting operations can usually be emulated by re-labelling qubits, so they are easy to overlook in circuits.
-But some of our circuit diagrams have used controlled bit rotations, requiring actual operations, so we provide the constructions for completeness.
+But some of our circuit diagrams have used controlled bit rotations, requiring actual operations, so we provide the constructions in figures \ref{fig:bit-rotate} and \ref{fig:bit-reverse} for completeness.
 
 \begin{figure}
   \centering
@@ -406,7 +406,7 @@ But some of our circuit diagrams have used controlled bit rotations, requiring a
     A controlled bit rotation / bit swap is three controlled bit-reverses.
     Uses no ancilla, $O(n+c)$ gates, and $O(n+c)$ depth.
   }
-  \label{fig:dependencies}
+  \label{fig:bit-rotate}
 \end{figure}
 
 \begin{figure}
@@ -418,7 +418,7 @@ But some of our circuit diagrams have used controlled bit rotations, requiring a
     For reversals on an even number of bits, swap the center two bits beforehand then use one of them as the center workspace bit from this construction.
     Uses no ancilla, $O(c + n)$ gates, and $O(c + n)$ depth.
   }
-  \label{fig:dependencies}
+  \label{fig:bit-reverse}
 \end{figure}
 
 
