@@ -5,5 +5,5 @@
 *.gz
 *.bbl
 *.out
-*.bib~
 *.blg
+*~
