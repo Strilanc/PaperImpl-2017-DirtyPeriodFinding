@@ -25,7 +25,7 @@ constructions from my [work in progress]
 | Double mod R | ![6][6] <br> fig [6][6] | [modular_double_rules.py](src/dirty_period_finding/decompositions/modular_double_rules.py) | [double-mod-effect][quirk-double-mod] |
 | Add mod R | ![8][8] <br> fig [7][7], [8][8], [9][9] | [modular_addition_rules.py](src/dirty_period_finding/decompositions/modular_addition_rules.py) | ??? |
 | Pivot-flip | ![10][10] <br> fig [10][10], [11][11] | [pivot_flip_rules.py](src/dirty_period_finding/decompositions/pivot_flip_rules.py) | ??? |
-| Add | ![12][12] <br> fig [12][12], [13][13], [14][14], [15][15] | [addition_rules.py](src/dirty_period_finding/decompositions/addition_rules.py) <br> [offset_rules.py](src/dirty_period_finding/decompositions/offset_rules.py) <br> [offset_rules.py](src/dirty_period_finding/decompositions/comparison_rules.py) | [big-add-test][quirk-big-add] [control-add-test][quirk-controlled-add] |
+| Add | ![12][12] <br> fig [12][12], [13][13], [14][14], [15][15] | [addition_rules.py](src/dirty_period_finding/decompositions/addition_rules.py) <br> [offset_rules.py](src/dirty_period_finding/decompositions/offset_rules.py) <br> [comparison_rules.py](src/dirty_period_finding/decompositions/comparison_rules.py) | [big-add-test][quirk-big-add] <br> <br> [control-add-test][quirk-controlled-add] |
 | Increment | ![17][17] <br> fig [16][16], [17][17] | [increment_rules.py](src/dirty_period_finding/decompositions/increment_rules.py) | ??? |
 | No-Ancilla Increment | ![18][18] <br> fig [18][18] | [bootstrap_ancilla_rules.py](src/dirty_period_finding/decompositions/bootstrap_ancilla_rules.py) <br> [phase_gradient_rules.py](src/dirty_period_finding/decompositions/phase_gradient_rules.py) | [full-increment-test][quirk-bootstrap] |
 | Rotate Bits | ![19][19] <br> fig [19][19] | [rotate_bits_rules.py](src/dirty_period_finding/decompositions/rotate_bits_rules.py) | ??? |
@@ -40,7 +40,7 @@ constructions from my [work in progress]
 [5]: doc/assets/controlled-modular-multiply-accumulate.png
 [6]: doc/assets/controlled-modular-double.png
 [7]: doc/assets/mod-add-from-pivot-flip-bars.png
-[8]: doc/assets/controlled-modular-offset.png
+[8]: doc/assets/controlled-modular-addition.png
 [9]: doc/assets/controlled-modular-offset.png
 [10]: doc/assets/controlled-pivot-flip.png
 [11]: doc/assets/controlled-const-pivot-flip.png
