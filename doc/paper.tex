@@ -148,7 +148,7 @@ We condition the first modular addition on the most significant bit of the input
 (The more significant bits go first because their effects must be hit by more left-shifts.)
 See figure \ref{fig:controlled-modular-scale-accumulate}.
 
-The conditional offset operations need one dirty bit, and the modular doublings need two, but for non-trivial $n$ there are more than enough unused bits available to borrow, so the circuit as a whole doesn't require any dirty bits.
+The conditional offset and modular doubling operations need one dirty bit, but for non-trivial $n$ there are more than enough unused bits available to borrow, so the circuit as a whole doesn't require any dirty bits.
 
 Note that the modular doublings require $R$ to be odd, since otherwise the operation would be irreversible and non-unitary.
 However, given that in the intended use case $R$ is a number to be factored, it is reasonable to require callers to have factored out multiples of two beforehand.
@@ -170,8 +170,8 @@ A decrement is just a reversed increment, a division is just a reversed multipli
 
 \subsection{Modular Doubling}
 
-To multiply a register by 2 modulo an odd $R$, we use pivot-flips (see section \ref{sec:pivot-flips}) and subtraction to align the two halves of the input space to MSB boundaries.
-After the two halves are aligned, a left-rotate completes the operation.
+To multiply a register by 2 modulo an odd $R$, we use controlled offsets and nots to shift the top half of the input space until it starts on the MSB boundary.
+Once that's done, a left-rotate completes the operation by turning the MSB into the LSB (converting the alignment into interleaving).
 See figure \ref{fig:modular-double}.
 
 \begin{figure}
@@ -180,7 +180,7 @@ See figure \ref{fig:modular-double}.
   \caption{\em
     Controlled modular doubling in $O(c + n \lg n)$ gates, $O(c + n)$ depth, with 2 dirty ancilla.
     $R$ must be odd.
-    Uses 2 dirty ancilla, $O(c + n \lg n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
+    Uses 1 dirty ancilla, $O(c + n \lg n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
   }
   \label{fig:modular-double}
 \end{figure}
