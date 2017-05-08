@@ -435,7 +435,9 @@ In figure \ref{fig:dependencies} we show a dependency graph of the constructions
 The total cost of period-finding, using the full construction, is $O(n^3 \lg n)$ gates and $O(n^3)$ depth.
 We perform $O(n)$ modular multiplications, each of which uses $O(n)$ modular additions and offsets, each of which uses $O(n \lg n)$ gates \cite{haner2016} and $O(n)$ depth.
 
-We tested individual constructions in \href{https://github.com/Strilanc/Quirk}{Quirk} and the full construction down to Toffoli gates in \href{https://github.com/ProjectQ-Framework/ProjectQ}{ProjectQ} \cite{projq2016}. [[[ insert link to code ]]] [[[ maybe make a plot of gate counts vs size? ]]] [[[ definitely need another constant-factor joke ]]]
+We tested individual constructions in \href{https://github.com/Strilanc/Quirk}{Quirk} and the full construction down to Toffoli gates in \href{https://github.com/ProjectQ-Framework/ProjectQ}{ProjectQ} \cite{projq2016}.
+The source code, and an issue tracker, can be found at \href{https://github.com/Strilanc/PaperImpl-PeriodFindCutQubits}{github.com/Strilanc/PaperImpl-PeriodFindCutQubits}.
+[[[ maybe make a plot of gate counts vs size? ]]] [[[ definitely need another constant-factor joke ]]]
 
 Our main improvements over previous constructions are 1) the use of pivot-flips for modular addition, 2) the use of bimultiplication for modular multiplication, and 3) the $O(n)$ incrementer requiring only a single dirty ancilla.
 
