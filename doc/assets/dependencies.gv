@@ -1,36 +1,42 @@
+// dot -Tpng dependencies.gv -o dependencies.png
+
 digraph G {
   node [shape=box]
   
   PeriodFinding [label="Period Finding\nfig 1, 2, 3"]
-  ModularPairedMultiply [label="Modular BiMultiply\n×K, ×-K⁻¹ (mod R)\nfig 4"]
+  ModularPairedMultiply [label="Modular Bimultiply\n×K, ×K⁻¹ (mod R)\nfig 4"]
   ModularMultiplyAccumulate [label="Modular Scaled-Accumulate\n+AK (mod R)\nfig 5"]
   ModularDouble [label="Modular Double\n×2 (mod R)\nfig 6"]
   ModularAdd [label="Modular Add/Offset\n+A (mod R)\nfig 7, 8, 9"]
-  PivotFlip [label="PivotFlip\nfig 10, 11"]
+  ModularNegate [label="Modular Negate\n×-1 (mod R)\nfig 10"]
+  PivotFlip [label="PivotFlip\nfig 11, 12"]
   Compare [label="Compare\n⊕A<B"]
-  Add [label="Addition / Offset\n+A\nfig 13, 14, 15"]
-  Increment [label="Increment\n+1\nfig 16, 17"]
-  SameSizeAdd [label="Same-Size Addition\n+A\nfig 12"]
-  PermuteBits [label="Rotate/Reverse Bits\nfig 19, 20"]
+  SameSizeAdd [label="Same-Size Addition\n+A\nfig 13"]
+  Add [label="Addition / Offset\n+A\nfig 14, 15, 16"]
+  Increment [label="Increment\n+1\nfig 17, 18"]
+  PermuteBits [label="Rotate/Reverse Bits\nfig 20, 21"]
   Leaf [label="NOT / CNOT / CCNOT"]
 
   edge [label="n"]
   PeriodFinding -> ModularPairedMultiply
 
   edge [label=""]
-  ModularPairedMultiply -> ModularMultiplyAccumulate, PermuteBits
+  ModularPairedMultiply -> ModularMultiplyAccumulate, ModularNegate
 
   edge [label="n"]
   ModularMultiplyAccumulate -> ModularDouble, ModularAdd
 
   edge [label=""]
-  ModularDouble -> PivotFlip, Add, PermuteBits
+  ModularDouble -> Add, PermuteBits
 
   edge [label=""]
-  ModularAdd -> Add, PivotFlip
+  ModularAdd -> PivotFlip
 
   edge [label=""]
-  PivotFlip -> Compare, Add
+  ModularNegate -> PivotFlip
+
+  edge [label=""]
+  PivotFlip -> Compare
 
   edge [label=""]
   Compare -> Add

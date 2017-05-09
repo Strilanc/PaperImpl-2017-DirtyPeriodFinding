@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 from __future__ import print_function
+from __future__ import unicode_literals
 
 import math
 import random
@@ -9,7 +9,6 @@ from fractions import Fraction
 from projectq import MainEngine
 from projectq.backends import Simulator
 from projectq.cengines import DecompositionRuleSet
-from projectq.ops import Measure
 from projectq.setups.decompositions import swap2cnot
 from projectq.types import Qureg
 
@@ -22,17 +21,7 @@ from dirty_period_finding.extensions import (
 from dirty_period_finding.gates import *
 
 
-def measure_register(qureg):
-    if not len(qureg):
-        return 0
-    eng = [q.engine for q in qureg][0]
-    Measure | qureg
-    eng.flush()
-    return int(qureg)
-
-
-def sample_period(eng,
-                  base,
+def sample_period(base,
                   modulus,
                   precision,
                   phase_qubit,
@@ -40,7 +29,6 @@ def sample_period(eng,
                   ancilla_qureg):
     """
     Args:
-        eng (projectq.cengines.MainEngine):
         base (int):
         modulus (int):
         precision (int):
@@ -82,10 +70,7 @@ def sample_period(eng,
               frac.limit_denominator(modulus - 1).denominator)
 
     # Fix ancilla register using factor in work register.
-    Measure | work_qureg
-    eng.flush()
-
-    fixup_factor = int(work_qureg)
+    fixup_factor = work_qureg.measure()
     fixup_gate = ModularBimultiplicationGate(fixup_factor, modulus)
     fixup_gate | (ancilla_qureg, work_qureg)
 
@@ -129,8 +114,7 @@ def main():
             X | q
     before = ancilla_qureg.measure()
 
-    p = sample_period(eng,
-                      base=base,
+    p = sample_period(base=base,
                       modulus=modulus,
                       precision=n * 2,
                       phase_qubit=eng.allocate_qubit(),
