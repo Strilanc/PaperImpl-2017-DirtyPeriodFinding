@@ -488,9 +488,24 @@ When quantum operations are available, the final ancilla can be cut without incr
 \end{figure}
 
 
-\section{Conclusion} \label{sec:conclusion}
+\section{Future Work and Conclusion} \label{sec:conclusion}
 
-We presented Toffoli-based arithmetic circuits that reduce the smallest known number of qubits required to perform Shor's algorithm by 1, and allowed an additional $n-1$ qubits to be dirty.
+Of the $2n+1$ qubits our period-finding construction requires: $1$ is used for the phase estimation qubit, $n$ are used to store the work register, and $n$ are ancilla used to implement modular multiplication in terms of scaled modular addition.
+All the other constructions, for simpler arithmetic, need two or fewer dirty ancilla.
+Furthermore, because scaled modular addition is reduced into operations that have a $\Theta(n)$ surplus of unused qubits, in context there's always more than enough dirty ancilla available to implement the simpler arithmetic inline.
+There's so much slack in the simpler arithmetic constructions that improving the number of qubits used by period-finding effectively means improving the very first step, from multiplication to some other operation, and nothing else.
+
+For example, consider a situation where we could cut multiplication operations into two pieces.
+If we knew the factorization $p \cdot q$ of the modulus $R$, with $p$ and $q$ each having size $\approx n/2$, then the Chinese remainder theorem guarantees we could uniquely represent $x \mod R$ as the pair $(x \mod p, x \mod q)$.
+Multiplications of the half-sized values could use and re-use the same half-sized clean ancilla register, so there would be three half-sized registers (one for $x \mod p$, one for $x \mod q$, and one ancilla register) for a total qubit count of $\approx 1.5n$.
+Despite the large reduction in the number of ancilla available to them, the underlying constructions would still contribute no additional ancilla.
+(Note: because the initial value $x_0 = 1$ is trivial, and the final value is discarded, it's not necessary to implement circuits that translate between the Chinese-remainder representation and the usual 2s-complement representation.)
+Of course, since we use period-finding to compute the factorization of $R$, using the factorization of $R$ to optimize period-finding would be paradoxical.
+
+We presented Toffoli-based arithmetic circuits that reduce the smallest known number of qubits required to perform Shor's algorithm from $2n+2$ to $2n+1$.
+The constructions also reduce the number of {\em clean} qubits required by $n$, so the number of clean qubits required is now $n + O(1)$.
+We consider this to be a step towards a period-finding construction that uses only $n + O(1)$ qubits total, which could reduce the expected lifetime of current cryptographic keys by months or years (depending on how quickly quantum computers gain error-corrected capacity).
+
 
 \bibliographystyle{plain}
 \bibliography{citations}

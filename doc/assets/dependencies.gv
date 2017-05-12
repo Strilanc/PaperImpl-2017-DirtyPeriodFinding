@@ -14,7 +14,8 @@ digraph G {
   SameSizeAdd [label="Same-Size Addition\n+A\nfig 13"]
   Add [label="Addition / Offset\n+A\nfig 14, 15, 16"]
   Increment [label="Increment\n+1\nfig 17, 18"]
-  PermuteBits [label="Rotate/Reverse Bits\nfig 20, 21"]
+  RotateBits [label="Rotate Bits\n<<< K\nfig 20"]
+  ReverseBits [label="Reverse Bits\nfig 21"]
   Leaf [label="NOT / CNOT / CCNOT"]
 
   edge [label="n"]
@@ -27,7 +28,10 @@ digraph G {
   ModularMultiplyAccumulate -> ModularDouble, ModularAdd
 
   edge [label=""]
-  ModularDouble -> Add, PermuteBits
+  ModularDouble -> Add, RotateBits
+
+  edge [label=""]
+  RotateBits -> ReverseBits
 
   edge [label=""]
   ModularAdd -> PivotFlip
@@ -53,6 +57,6 @@ digraph G {
   SameSizeAdd -> Leaf
 
   edge [label="n"]
-  PermuteBits -> Leaf
+  ReverseBits -> Leaf
 }
 
