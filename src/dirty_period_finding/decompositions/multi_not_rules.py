@@ -142,30 +142,36 @@ def cut_not_max_controls_into_toffolis(target, controls, dirty_reg):
         sweep(range(d - 1))
 
 
+# Reduce from many targets to one target.
+decompose_multi_not_into_cnots = DecompositionRule(
+    gate_class=MultiNotGate,
+    gate_decomposer=lambda cmd: do_multi_not_with_one_big_not_and_friends(
+        targets=cmd.qubits[0],
+        controls=cmd.control_qubits))
+
+# Use many dirty bits created by other decompositions to cut all the way down
+# to Toffolis.
+decompose_cnot_with_big_workspace = DecompositionRule(
+    gate_class=XGate,
+    gate_recognizer=min_controls(3) & min_workspace_vs_controls(factor=1,
+                                                                offset=-2),
+    gate_decomposer=lambda cmd: cut_not_max_controls_into_toffolis(
+        target=cmd.qubits[0],
+        controls=cmd.control_qubits,
+        dirty_reg=workspace(cmd)))
+
+# Use a dirty bit to cut control counts in half.
+decompose_halve_cnot_with_single_workspace = DecompositionRule(
+    gate_class=XGate,
+    gate_recognizer=min_controls(3) & min_workspace(1),
+    gate_decomposer=lambda cmd: cut_not_max_controls_in_half(
+        target=cmd.qubits[0],
+        controls=cmd.control_qubits,
+        dirty=workspace(cmd)[0]))
+
+
 all_defined_decomposition_rules = [
-    # Use many dirty bits from last step to cut all the way down to Toffolis.
-    DecompositionRule(
-        gate_class=XGate,
-        gate_recognizer=min_controls(3) &
-                        min_workspace_vs_controls(factor=1, offset=-2),
-        gate_decomposer=lambda cmd: cut_not_max_controls_into_toffolis(
-            target=cmd.qubits[0],
-            controls=cmd.control_qubits,
-            dirty_reg=workspace(cmd))),
-
-    # Reduce from many targets to one target.
-    DecompositionRule(
-        gate_class=MultiNotGate,
-        gate_decomposer=lambda cmd: do_multi_not_with_one_big_not_and_friends(
-            targets=cmd.qubits[0],
-            controls=cmd.control_qubits)),
-
-    # Use a dirty bit to cut control counts in half.
-    DecompositionRule(
-        gate_class=XGate,
-        gate_recognizer=min_controls(3) & min_workspace(1),
-        gate_decomposer=lambda cmd: cut_not_max_controls_in_half(
-            target=cmd.qubits[0],
-            controls=cmd.control_qubits,
-            dirty=workspace(cmd)[0])),
+    decompose_multi_not_into_cnots,
+    decompose_cnot_with_big_workspace,
+    decompose_halve_cnot_with_single_workspace,
 ]

@@ -384,10 +384,11 @@ def decomposition_to_ascii(gate,
                            decomposition_rule,
                            register_sizes,
                            control_size=0,
-                           workspace=0):
+                           workspace=0,
+                           ascii_only=True):
     return commands_to_ascii_circuit(record_decomposition(gate,
                                                           decomposition_rule,
                                                           register_sizes,
                                                           control_size,
                                                           workspace),
-                                     ascii_only=True)
+                                     ascii_only=ascii_only)

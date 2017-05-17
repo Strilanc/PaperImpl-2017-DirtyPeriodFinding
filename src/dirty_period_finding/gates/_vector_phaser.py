@@ -144,7 +144,7 @@ class XGate(projectq.ops.XGate, BasicGateEx):
         return FancyXGate()**power
 
 
-class FancyXGate(VectorPhaserGate, BasicMathGateEx, projectq.ops.XGate):
+class FancyXGate(VectorPhaserGate, BasicMathGateEx, XGate):
     def __init__(self, half_turns=1.0):
         BasicMathGateEx.__init__(self)
         projectq.ops.XGate.__init__(self)
@@ -154,7 +154,7 @@ class FancyXGate(VectorPhaserGate, BasicMathGateEx, projectq.ops.XGate):
         return 1 if r == 0 else 0,
 
     def with_half_turns(self, half_turns):
-        return XGate(half_turns)
+        return FancyXGate(half_turns)
 
     def base_str(self):
         return 'X'
