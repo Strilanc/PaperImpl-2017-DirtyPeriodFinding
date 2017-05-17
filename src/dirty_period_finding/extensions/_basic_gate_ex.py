@@ -6,12 +6,16 @@ from projectq.ops import BasicGate, Command
 from projectq.types import BasicQubit
 
 
+def gate_and(self, controls):
+    if isinstance(controls, BasicQubit):
+        controls = [controls]
+    controls = list(controls)
+    return GateWithCurriedControls(self, controls)
+
+
 class BasicGateEx(BasicGate):
     def __and__(self, controls):
-        if isinstance(controls, BasicQubit):
-            controls = [controls]
-        controls = list(controls)
-        return GateWithCurriedControls(self, controls)
+        return gate_and(self, controls)
 
     def generate_command(self, qubits):
         qubits = self.make_tuple_of_qureg(qubits)

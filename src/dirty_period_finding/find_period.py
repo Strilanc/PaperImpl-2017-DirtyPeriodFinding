@@ -9,6 +9,7 @@ from fractions import Fraction
 from projectq import MainEngine
 from projectq.backends import Simulator
 from projectq.cengines import DecompositionRuleSet
+from projectq.ops import X, Z
 from projectq.setups.decompositions import swap2cnot
 from projectq.types import Qureg
 

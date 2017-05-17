@@ -3,9 +3,9 @@ from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
 from projectq.meta import Control
+from projectq.ops import X
 
 from dirty_period_finding.extensions import (
-    Swap,
     min_workspace,
     min_controls,
     max_controls,
@@ -14,7 +14,6 @@ from dirty_period_finding.extensions import (
     workspace,
 )
 from dirty_period_finding.gates import (
-    X,
     AdditionGate,
     Increment,
     Decrement,

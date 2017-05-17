@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
+from projectq.ops import X
 
 from dirty_period_finding.extensions import (
     workspace,
@@ -12,7 +13,6 @@ from dirty_period_finding.gates import (
     LessThanConstantGate,
     MultiNot,
     PredictOffsetOverflowGate,
-    X,
     XorOffsetCarrySignalsGate,
     OffsetGate,
 )

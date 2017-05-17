@@ -2,12 +2,14 @@
 from __future__ import division
 from __future__ import unicode_literals
 
+from projectq.ops import X
+
 from dirty_period_finding.decompositions.multi_not_rules import (
     decompose_multi_not_into_cnots,
     decompose_halve_cnot_with_single_workspace,
     decompose_cnot_with_big_workspace,
 )
-from dirty_period_finding.gates import MultiNot, X
+from dirty_period_finding.gates import MultiNot
 from .._test_util import (
     decomposition_to_ascii,
     check_permutation_decomposition,
@@ -34,7 +36,7 @@ def test_decompose_halve_cnot_with_single_workspace():
         if control_size >= 3:
             check_permutation_decomposition(
                 decomposition_rule=decompose_halve_cnot_with_single_workspace,
-                gate=X**1,
+                gate=X,
                 register_sizes=[1],
                 control_size=control_size,
                 workspace=1)
@@ -45,7 +47,7 @@ def test_decompose_cnot_with_big_workspace():
         if control_size >= 3:
             check_permutation_decomposition(
                 decomposition_rule=decompose_cnot_with_big_workspace,
-                gate=X**1,
+                gate=X,
                 register_sizes=[1],
                 control_size=control_size,
                 workspace=max(0, control_size - 2))

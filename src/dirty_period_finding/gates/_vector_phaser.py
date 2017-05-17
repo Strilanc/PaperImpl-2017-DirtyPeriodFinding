@@ -115,12 +115,12 @@ class VectorPhaserGate(BasicGateEx):
         return hash((VectorPhaserGate, self.half_turns, tuple(self.vector)))
 
 
-class ZGate(VectorPhaserGate):
+class ZPowGate(VectorPhaserGate):
     def __init__(self, half_turns=1.0):
         VectorPhaserGate.__init__(self, [0, 1], half_turns)
 
     def with_half_turns(self, half_turns):
-        return ZGate(half_turns)
+        return ZPowGate(half_turns)
 
     def base_str(self):
         return "Z"
@@ -137,28 +137,16 @@ class ZGate(VectorPhaserGate):
         return VectorPhaserGate.__str__(self)
 
 
-# A complicated hierarchy causes extreme overhead in the simulator loop.
-# So only add the very basics.
-class XGate(projectq.ops.XGate, BasicGateEx):
-    def __pow__(self, power):
-        return FancyXGate()**power
-
-
-class FancyXGate(VectorPhaserGate, BasicMathGateEx, XGate):
+class XPowGate(VectorPhaserGate):
     def __init__(self, half_turns=1.0):
-        BasicMathGateEx.__init__(self)
         projectq.ops.XGate.__init__(self)
         VectorPhaserGate.__init__(self, [1, -1], half_turns)
 
-    def do_operation(self, r):
-        return 1 if r == 0 else 0,
-
     def with_half_turns(self, half_turns):
-        return FancyXGate(half_turns)
+        return XPowGate(half_turns)
 
     def base_str(self):
         return 'X'
 
-
-X = XGate()
-Z = ZGate()
+projectq.ops.XGate.__pow__ = lambda self, power: XPowGate(power)
+projectq.ops.ZGate.__pow__ = lambda self, power: ZPowGate(power)

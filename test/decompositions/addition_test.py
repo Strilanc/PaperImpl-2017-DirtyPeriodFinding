@@ -8,6 +8,7 @@ import random
 from projectq import MainEngine
 from projectq.cengines import (DummyEngine,
                                DecompositionRuleSet)
+from projectq.ops import X
 from projectq.setups.decompositions import swap2cnot
 from projectq.types import Qureg
 
@@ -29,8 +30,6 @@ from dirty_period_finding.gates import (
     MultiNot,
     IncrementGate,
     DecrementGate,
-    X,
-    XGate,
 )
 from .._test_util import fuzz_permutation_circuit, check_permutation_circuit
 
@@ -59,7 +58,6 @@ def test_exact_commands_for_small_circuit():
 
 
 def test_toffoli_size_of_addition():
-    x = XGate()
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=[
         AutoReplacerEx(DecompositionRuleSet(modules=[

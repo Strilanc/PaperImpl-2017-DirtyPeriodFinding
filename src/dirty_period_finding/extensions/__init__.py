@@ -1,6 +1,7 @@
 from . import _monkey_patching
 from ._basic_gate_ex import (
     BasicGateEx,
+    gate_and,
     H,
     SelfInverseGateEx,
     GateWithCurriedControls,

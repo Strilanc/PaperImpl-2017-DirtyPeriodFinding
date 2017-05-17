@@ -6,8 +6,10 @@ from projectq import MainEngine
 from projectq.backends import ResourceCounter
 from projectq.backends import Simulator
 from projectq.cengines import BasicEngine, UnsupportedEngineError
-from projectq.ops import Command, Measure
+from projectq.ops import Command, Measure, FlushGate, XGate, ZGate
 from projectq.types import Qubit, Qureg
+
+from ._basic_gate_ex import gate_and
 
 
 def command_str(cmd):
@@ -166,6 +168,16 @@ def measure_qubit(qubit):
     return bool(qubit)
 
 
+def simulator_receive(self, command_list):
+    if self.is_last_engine:
+        for cmd in command_list:
+            self._handle(cmd)
+    else:
+        for cmd in command_list:
+            self._handle(cmd)
+            self.send([cmd])
+
+
 Command.__str__ = command_str
 Command.__repr__ = command_str
 Qureg.__str__ = qureg_str
@@ -177,3 +189,27 @@ BasicEngine.__del__ = lambda x: None
 MainEngine.__init__ = MainEngine_init
 Qureg.measure = measure_register
 Qubit.measure = measure_qubit
+Simulator.receive = simulator_receive
+XGate.__and__ = gate_and
+ZGate.__and__ = gate_and
+XGate.__eq__ = lambda self, other: other.__class__ is XGate
+XGate.__hash__ = lambda self: hash((XGate,))
+
+original_handle = Simulator._handle
+
+
+_x_list = [[0, 1], [1, 0]]
+
+
+def sim_handle(self, cmd):
+    if cmd.gate.__class__ is XGate:
+        target = [cmd._qubits[0][0].id]
+        controls = [qb.id for qb in cmd.control_qubits]
+        self._simulator.apply_controlled_gate(_x_list, target, controls)
+        if not self._gate_fusion:
+            self._simulator.run()
+    elif cmd.gate.__class__ is FlushGate:
+        self._simulator.run()
+    else:
+        original_handle(self, cmd)
+Simulator._handle = sim_handle

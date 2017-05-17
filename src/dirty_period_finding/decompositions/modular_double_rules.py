@@ -2,9 +2,9 @@
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
+from projectq.ops import X
 
 from dirty_period_finding.gates import (
-    X,
     ModularBimultiplicationGate,
     ModularDoubleGate,
     OffsetGate,

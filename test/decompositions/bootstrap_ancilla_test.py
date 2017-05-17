@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRuleSet
+from projectq.ops import X
 from projectq.setups.decompositions import swap2cnot
 
 from dirty_period_finding.decompositions import (
@@ -16,7 +17,7 @@ from dirty_period_finding.extensions import (
     AutoReplacerEx,
     LimitedCapabilityEngine,
 )
-from dirty_period_finding.gates import Increment, X
+from dirty_period_finding.gates import Increment
 from .._test_util import check_quantum_permutation_circuit
 
 

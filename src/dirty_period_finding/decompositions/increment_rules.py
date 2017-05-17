@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from projectq.cengines import DecompositionRule
+from projectq.ops import X
 
 from dirty_period_finding.extensions import (
     min_workspace,
@@ -8,14 +9,12 @@ from dirty_period_finding.extensions import (
     max_controls,
     workspace,
     max_register_sizes,
-    max_workspace,
 )
 from dirty_period_finding.gates import (
     Add,
     Subtract,
     IncrementGate,
     MultiNot,
-    X
 )
 
 

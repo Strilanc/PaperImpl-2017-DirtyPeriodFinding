@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
+from projectq.ops import XGate, X
 
 from dirty_period_finding.extensions import (
     min_workspace,
@@ -9,7 +10,7 @@ from dirty_period_finding.extensions import (
     min_controls,
     workspace,
 )
-from dirty_period_finding.gates import MultiNotGate, X, XGate
+from dirty_period_finding.gates import MultiNotGate
 
 
 def do_multi_not_with_one_big_not_and_friends(targets, controls):

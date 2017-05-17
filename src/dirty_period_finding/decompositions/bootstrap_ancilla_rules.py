@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
+from projectq.ops import XGate, X, Z
 
 from dirty_period_finding.extensions import (
     H,
@@ -15,9 +16,6 @@ from dirty_period_finding.gates import (
     IncrementGate,
     OffsetGate,
     PhaseGradient,
-    X,
-    XGate,
-    Z,
 )
 
 

@@ -3,9 +3,10 @@ from __future__ import division
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
+from projectq.ops import Z
 
 from dirty_period_finding.extensions import max_controls
-from dirty_period_finding.gates import PhaseGradientGate, Z
+from dirty_period_finding.gates import PhaseGradientGate
 
 
 def do_phase_gradient(target_reg, controls, factor):

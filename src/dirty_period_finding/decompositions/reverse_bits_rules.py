@@ -3,13 +3,14 @@ from __future__ import division
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
+from projectq.ops import X
 
 from dirty_period_finding.extensions import (
     Swap,
     min_controls,
     max_controls,
 )
-from dirty_period_finding.gates import ReverseBitsGate, X
+from dirty_period_finding.gates import ReverseBitsGate
 
 
 def do_naive_bit_reverse(target_reg, controls):

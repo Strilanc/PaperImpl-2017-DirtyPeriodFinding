@@ -1,13 +1,10 @@
 import pytest
 from projectq import MainEngine
 from projectq.cengines import DummyEngine
-from projectq.ops import (
-    CNOT, H, Y, Z, FlushGate, Measure, BasicMathGate
-)
+from projectq.ops import CNOT, H, Y, Z, X, FlushGate, Measure, BasicMathGate
 from projectq.types import Qubit
 
 from dirty_period_finding.extensions import LimitedCapabilityEngine
-from dirty_period_finding.gates import X
 
 
 def test_limited_capability_engine_default():

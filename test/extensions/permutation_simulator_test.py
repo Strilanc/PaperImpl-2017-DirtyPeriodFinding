@@ -1,8 +1,7 @@
 from projectq import MainEngine
-from projectq.ops import BasicMathGate
+from projectq.ops import BasicMathGate, X
 
 from dirty_period_finding.extensions import PermutationSimulator
-from dirty_period_finding.gates import X
 
 
 def test_simulator_triangle_increment():

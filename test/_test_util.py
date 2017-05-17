@@ -12,7 +12,7 @@ from projectq import MainEngine
 from projectq.backends import Simulator
 from projectq.cengines import DummyEngine, DecompositionRule
 from projectq.meta import Dagger
-from projectq.ops import H, All, Rz, Measure
+from projectq.ops import H, All, Rz, Measure, X
 
 from dirty_period_finding.extensions import (
     ClassicalSimulator,
@@ -21,7 +21,6 @@ from dirty_period_finding.extensions import (
     CommandEx,
     BasicGateEx,
 )
-from dirty_period_finding.gates import X
 
 
 def check_phase_circuit(register_sizes,
