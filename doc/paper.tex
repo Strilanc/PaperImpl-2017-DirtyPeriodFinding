@@ -11,8 +11,7 @@
 \begin{abstract}
 \em
 We present reversible classical circuits for performing various arithmetic operations aided by dirty ancilla in an unknown state that must be preserved.
-We improve the number of qubits needed to factor an $n$-bit number with Shor's algorithm \cite{Shor1999} from $2n+2$ qubits \cite{takahashi2006, haner2016} to $2n+1$ qubits, without increasing the asymptotic depth of the circuit.
-We also allow $n-1$ of the $2n+1$ qubits to be dirty.
+We improve the number of clean qubits needed to factor an $n$-bit number with Shor's algorithm \cite{Shor1999} from $2n+2$ \cite{takahashi2006, haner2016} to $n+2$, and the total number of qubits needed from $2n+2$ to $2n+1$, without increasing the asymptotic size or depth of the circuit.
 \end{abstract}
 
 \section{Introduction} \label{sec:introduction}
@@ -24,21 +23,22 @@ Clean bits are more valuable, allowing for simpler and more compact circuit cons
 
 One part of a circuit can borrow dirty bits from another part of the same circuit, so circuit constructions that require only dirty bits are easier to apply under tight space constraints, or on circuit topologies where other ancilla are too far away to be acquired quickly.
 When attempting to reduce the number of bits or qubits required by a circuit, converting clean ancilla to dirty ancilla is a useful intermediate goal.
-In this paper, at great cost to the constant factors in the gate count and depth, we reduce the number of qubits required to perform period finding on modular exponentiation from $2n+2$ clean qubits \cite{takahashi2006, haner2016} to $n+2$ clean qubits and $n-1$ dirty qubits without increasing the asymptotic costs.
+In this paper, we reduce the number of qubits required to find the period of exponentiation, modulo an $n$-bit modulus, from $2n+2$ clean qubits \cite{takahashi2006, haner2016} to $n+2$ clean qubits and $n-1$ dirty qubits.
+We do so without increasing the asymptotic costs, though the constant factors of our constructions are worse.
 
 Our paper is structured as follows.
 Section \ref{sec:introduction} introduces and describes the conventions our circuit constructions will follow.
-In section \ref{sec:construct} we describe the circuit constructions we use to convert period finding into constant-sized gates, while tracking the number of required dirty ancilla.
+In section \ref{sec:construct} we describe the circuit constructions we use to reduce period finding into constant-sized gates, while tracking the number of required dirty ancilla.
 Then, in section \ref{sec:costs}, we discuss the novelty and comparative costs of the presented circuit constructions.
-Finally, section \ref{sec:conclusion} concludes and summarizes.
+Finally, section \ref{sec:conclusion} concludes with a discussion of possible future improvements.
 
 All constructions in this paper use a 2s-complement representation of integers, and all diagrams order qubits from least significant bit (LSB) at the top to most significant bit (MSB) at the bottom.
 Nearly all presented circuit constructions are classical, and the required dirty qubit counts we note and show in diagrams are in terms of those classical constructions.
-The quantum trick shown in figure \ref{fig:bootstrap-ancilla} can cut dirty ancilla from several of our constructions, but only in places that don't affect the overall total for period-finding.
+(The quantum trick shown in figure \ref{fig:bootstrap-ancilla} can cut dirty ancilla from several of our constructions, but only in places that don't affect the overall total for period-finding.)
 
 For clarity, circuit diagrams will divide operations into separate input and output parts, with inputs shaded gray, when applicable.
 For completeness, even when the period finding reduction doesn't produce a controlled version of an operation, we nevertheless provide controllable constructions that scale linearly with the number of controls.
-For brevity, we take for granted that each circuit's inverse operation is decomposed into the same operations as the original operation but run in reverse order and with each sub-operation inverted (a decrement is a reversed increment, a division is a reversed multiplication, and so forth).
+For brevity, we take for granted that each circuit's inverse operation is decomposed into the same operations as the original operation but run in reverse order and with each sub-operation inverted (a decrement is a reversed increment, a multiply-add is a reversed multiply-subtract, a modular division is a reversed modular multiplication, and so forth).
 
 We do not attempt to give reasonable behavior to modular arithmetic circuits applied to out of range values (ones equal to or larger than the modulus).
 This {\em includes input values}.
@@ -48,33 +48,20 @@ If the precondition $y < R$ is violated, what occurs is undefined behavior \cite
 
 \section{Period Finding into Toffolis} \label{sec:construct}
 
+Our reduction from period finding to constant-sized gates uses many circuit constructions.
+Figure \ref{fig:dependencies} shows an overview of the various operations we will use, and the path through them that we will take.
+
+\begin{figure}
+  \centering
+  \includegraphics[height=17.3cm]{assets/dependencies.png}
+  \caption{
+    Meta-figure showing the tagged transitive reduction of dependencies between constructions in our paper.
+    Edge labels indicate which constructions use a dependency more than a constant number of times.
+  }
+  \label{fig:dependencies}
+\end{figure}
+
 \subsection{Period Finding}
-
-A high-level view of the circuit for period finding on modular exponentiation, the core quantum subroutine of Shor's quantum factoring algorithm \cite{Shor1999}, is shown in figure \ref{fig:period-finding}.
-The circuit starts by preparing a uniform superposition $|\psi_0\rangle = \sqrt{2^{-n}} \sum_{k=0}^{2^n} |k\rangle$, then uses the $\times B^A {\pmod R}$ operation to separate that superposition into equivalence classes modulo the unknown period $p$ of said operation.
-That is to say, w.l.o.g. the state ends up equal to $|\psi_{1,x}\rangle = \sqrt{2^{-n}/p} \sum_{k=0}^{2^n/p} |pk + x \rangle$ for some $x$.
-The circuit then applies an inverse Fourier transform to the state.
-Fourier transforming a uniform signal with period $p$ produces a spectrum with peaks near $N \cdot 0/p$, $N \cdot 1/p$, $N \cdot 2/p$, ..., $N \cdot (p-1)/p$.
-Shor's algorithm recovers the period $p$ by sampling values $s_i$ from said spectrum, then using a continued fractions algorithm to compute the denominator of a fraction closest to $s_i/N$ given some maximum denominator.
-
-Because period-finding measures all qubits immediately after performing a QFT, most of the transformed qubits can be measured earlier than shown.
-In fact, each qubit can be measured so early that the next qubit needed for the QFT does not even need to be initialized yet!
-Only one of the qubits in the phase-estimation register needs to be present at a time, and so the phase register can be reduced to a single repeatedly-used qubit \cite{beauregard2003}.
-Figure \ref{fig:period-finding-solo-phase-qubit} shows a period-finding circuit with this property.
-It uses (a) controlled modular multiplication, (b) measurement, (c) X-axis rotations classically parametrized by previous measurements, and (d) qubit resets.
-Note that the only non-trivial operation is (a), the controlled modular multiplication of an $n$-qubit register.
-
-We perform modular multiplication with multiply-accumulates and an ancilla register as in \cite{beauregard2003}.
-However, to allow our ancilla register to be mostly dirty, we extend the operation so that it has a well defined effect on the second register: multiplying by the inverse factor.
-We will refer to this combined multiply-A-and-inverse-multiply-B operation as a ``bimultiply".
-
-The bimultiplications we perform throughout the algorithm do change the value of the ancilla register, but after the usual end of the circuit we can undo the damage.
-The key insight is that the work register is initialized to $|1\rangle$ and gets multiplied by constants inverse to the ones trashing the dirty ancilla register.
-Instead of discarding the work register after performing phase estimation, we measure it to recover the fixup factor needed to restore the dirty register's original value.
-Figure \ref{fig:period-finding-solo-phase-qubit-explicit-dirty-register} shows this construction.
-
-Because our modular circuit constructions would have undefined behavior if any register has a value equal to or larger than $R$, we need the ancilla register to contain a value less than $R$.
-We ensure this by requiring that the ancilla register's MSB be $|0\rangle$ (i.e. clean) and that the registers be as small as possible (i.e. have size $n = \lceil \lg_2(R-1) \rceil$).
 
 \begin{figure}
   \centering
@@ -89,6 +76,33 @@ We ensure this by requiring that the ancilla register's MSB be $|0\rangle$ (i.e.
   }
   \label{fig:period-finding}
 \end{figure}
+
+A high-level view of the circuit for period finding on modular exponentiation, the core quantum subroutine of Shor's quantum factoring algorithm \cite{Shor1999}, is shown in figure \ref{fig:period-finding}.
+The circuit starts by preparing a uniform superposition $|\psi_0\rangle = \sqrt{2^{-n}} \sum_{k=0}^{2^n-1} |k\rangle$, then uses the $\times B^A {\pmod R}$ operation to separate that superposition into equivalence classes modulo the unknown period $l$ of said operation.
+That is to say, w.l.o.g. the state ends up equal to $|\psi_{1,x}\rangle = \sqrt{l 2^{-n}} \sum_{k=0}^{(2^n/l)-1} |l k + x \rangle$ for some $x$.
+The circuit then applies an inverse Fourier transform to the state.
+Fourier transforming a uniform signal with period $l$ produces a spectrum with peaks near $N \cdot 0/l$, $N \cdot 1/l$, $N \cdot 2/l$, ..., $N \cdot (p-1)/l$.
+Shor's algorithm recovers the period $l$ by sampling values $s_i$ from said spectrum, then using a continued fractions algorithm to compute the denominator of the fraction (with denominator below $R$) that is closest to $s_i/N$.
+
+Because period-finding measures all qubits immediately after performing a QFT, most of the transformed qubits can be measured earlier than shown.
+In fact, each qubit can be measured so early that the next qubit needed for the QFT does not even need to be initialized yet!
+Only one of the qubits in the phase-estimation register needs to be present at a time, and so the phase register can be reduced to a single repeatedly-used qubit \cite{zalka1998, mosca1999, parker2000, beauregard2003}.
+Figure \ref{fig:period-finding-solo-phase-qubit} shows a period-finding circuit with this property.
+It uses (a) controlled modular multiplication, (b) measurement, (c) X-axis rotations classically parametrized by previous measurements, and (d) qubit resets.
+The only non-trivial operation is (a), the controlled modular multiplication of an $n$-qubit register.
+
+We perform modular multiplication with multiply-accumulates and an ancilla register as in \cite{beauregard2003}.
+However, to allow our ancilla register to be mostly dirty, we extend the operation so that it has a well defined effect on the second register: multiplying by the inverse factor.
+We will refer to this combined multiply-A-and-inverse-multiply-B operation as a ``bimultiply".
+
+The bimultiplications we perform throughout the algorithm do change the value of the ancilla register, but after the usual end of the circuit we can undo the damage.
+The key insight is that the work register is initialized to $|1\rangle$ and gets multiplied by constants inverse to the ones trashing the dirty ancilla register.
+Instead of discarding the work register after performing phase estimation, as is normally done, we have a use for it.
+We measure the work register to recover the fixup factor needed to restore the dirty register's original value.
+Figure \ref{fig:period-finding-solo-phase-qubit-explicit-dirty-register} shows this construction.
+
+Because our modular circuit constructions would have undefined behavior if any register has a value equal to or larger than $R$, we need the ancilla register to contain a value less than $R$.
+We ensure this by requiring that the ancilla register's MSB be $|0\rangle$ (i.e. clean) and that the registers be as small as possible (i.e. have size $n = \lceil \lg_2(R-1) \rceil$).
 
 \begin{figure*}
   \centering
@@ -325,11 +339,11 @@ Finally, when the MSB is on (instead of off) its role as carry signal causes an 
 This extra increment is cancelled with a controlled decrement.
 See the circuit diagram in figure \ref{fig:inline-adder-into-large}.
 
-To control addition gates, and offset gates, we do an uncontrolled addition followed by an uncontrolled subtraction bordered by NOT gates that fire when the controls are satisfied.
+To control addition gates, and offset gates, we do an uncontrolled addition followed by an uncontrolled subtraction bordered by NOT gates conditioned on all the controls.
 When the NOT gates don't fire, the subtraction cancels the addition.
 When the NOT gates do fire, the subtraction is inverted into an addition and $2 \cdot A$ is added to the target.
 To add $A$ instead of $2 \cdot A$ into the target, we temporarily prepend a dirty bit onto the target register.
-See \ref{fig:controlled-addition}.
+See figure \ref{fig:controlled-addition}.
 
 \begin{figure}
   \centering
@@ -372,7 +386,7 @@ When $n$ dirty bits are available, $x$ can come from a register defined by those
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{assets/increment-many-dirty.png}
-  \caption{\em Subtracting $x$ and $-x-1$ from a register increments it. Requires $O(N)$ depth, size, and $N$ dirty ancilla.}
+  \caption{\em Subtracting $x$ and $-x-1$ from a register increments it. Requires $O(n)$ depth, size, and $n$ dirty ancilla.}
   \label{fig:increment-many-dirty}
 \end{figure}
 
@@ -411,7 +425,7 @@ See figure \ref{fig:controlled-increment-odd}.
   \caption{\em Bootstrapping a dirty ancilla out of an increment gate using quantum operations.
   The $i^{\text{frac}}$ gate is a ``phase gradient" operation that phases each computational basis state $|v\rangle$ by an amount proportional to $v/2^d$, where $d$ is the size of the register.
   In this case each state is phased by $e^{i \frac{\pi}{2} v/2^d}$.
-  The phase gradient is implemented by a column of $Z^{2^{-k}}$ gates, .}
+  The phase gradient is implemented by a column of $Z^{2^{-k}}$ gates.}
   \label{fig:bootstrap-ancilla}
 \end{figure}
 
@@ -448,18 +462,33 @@ But some of our circuit diagrams have used controlled bit rotations, requiring a
 
 Several of our constructions have used CNOTs with many controls and many targets.
 To avoid paying the overhead of $c$ controls for every target, we use one big CNOT to toggle-control all the others.
-We then use a dirty ancilla (i.e. one of the other targets) to efficiently reduce the big CNOT into Toffolis.
+We then use the available dirty ancilla to reduce the single remaining CNOT with many controls into Toffoli gates.
+See figures \ref{fig:multi-not} and \ref{fig:cnot-reduction}.
 
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{assets/multi-cnot-to-single-cnots.png}
+  \caption{\em
+    Separating controlled not gates with many controls and many targets into single-target single-control not-gates and one single-target many-control not-gate.
+    Uses no ancilla, $O(c + n)$ gates, and $O(c + \lg n)$ depth.
+  }
+  \label{fig:multi-not}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{assets/cnot-reduction.png}
+  \caption{\em
+    When $c-2$ dirty ancilla are available, a controlled-not with $c$ controls can be reduced into $4c - 8$ Toffoli gates.
+  }
+  \label{fig:cnot-reduction}
+\end{figure}
 
 \section{Overview and Improvements} \label{sec:costs}
 
 In figure \ref{fig:dependencies} we show a dependency graph of the constructions discussed in this paper.
 The total cost of period-finding, using the full construction, is $O(n^3 \lg n)$ gates and $O(n^3)$ depth.
 We perform $O(n)$ modular multiplications, each of which uses $O(n)$ modular additions and offsets, each of which uses $O(n \lg n)$ gates \cite{haner2016} and $O(n)$ depth.
-
-We tested individual constructions in \href{https://github.com/Strilanc/Quirk}{Quirk} and the full construction down to Toffoli gates in \href{https://github.com/ProjectQ-Framework/ProjectQ}{ProjectQ} \cite{projq2016}.
-The source code, and an issue tracker for submitting errata, can be found at \href{https://github.com/Strilanc/PaperImpl-PeriodFindCutQubits}{github.com/Strilanc/PaperImpl-PeriodFindCutQubits}.
-[[[ maybe make a plot of gate counts vs size? ]]] [[[ definitely need another constant-factor joke ]]]
 
 Our main improvements over previous constructions are 1) the use of pivot-flips for modular addition, 2) the use of bimultiplication for modular multiplication, and 3) the $O(n)$ incrementer requiring only a single dirty ancilla.
 
@@ -473,38 +502,37 @@ This improvement allows $n-1$ of the qubits in the ancilla register to be dirty 
 
 Previous published incrementers (not counting an unpublished version of our construction \cite{gidney2015} cited by \cite{haner2016}) required either $O(n^2)$ gates or $\omega(1)$ ancilla \cite{draper2000, barenco1995}.
 Our classical incrementer constructions use $O(n)$ gates and a single dirty ancilla.
-Note that, for classical reversible computation, 1 dirty ancilla is optimal.
-The parity of the state permutation performed by an increment operation is odd, but the parity of the permutation performed by any classical gate that doesn't cover the entire circuit is even.
+Note that, for classical reversible computation, 1 dirty ancilla is the minimum possible for an incrementer.
+The parity of the state permutation performed by an increment operation is odd, but the parity of the permutation performed by any classical gate that doesn't cover the entire circuit is even, and odd-parity permutations can't be implemented by composing even-parity permutations.
 When quantum operations are available, the final ancilla can be cut without increasing the asymptotic cost (see figure \ref{fig:bootstrap-ancilla}).
 
-\begin{figure}
-  \centering
-  \includegraphics[height=17.3cm]{assets/dependencies.png}
-  \caption{
-    Meta-figure showing the transitive reduction of dependencies between constructions in our paper.
-    Edge labels indicate which constructions use a dependency more than a constant number of times.
-  }
-  \label{fig:dependencies}
-\end{figure}
+We tested individual constructions in \href{https://github.com/Strilanc/Quirk}{Quirk} and the full construction down to Toffoli gates in \href{https://github.com/ProjectQ-Framework/ProjectQ}{ProjectQ} \cite{projq2016}.
+The source code for the ProjectQ implementation, and an issue tracker for submitting errata, can be found at \href{https://github.com/Strilanc/PaperImpl-2017-DirtyPeriodFinding}{github.com/Strilanc/PaperImpl-2017-DirtyPeriodFinding}.
+
+Although the asymptotic costs of our constructions match previous work, the constant factors are significantly worse.
+For example, our equivalent of a controlled 32-qubit multiplication uses roughly 1.3 million Toffoli gates (the specific number depends on the factor, the modulus, whether or not a number of optimizations are used, and whether or not those optimizations apply to a given case).
+This cost is over an order of magnitude worse than previous work \cite{haner2016}.
+The reason for the increased cost is that using dirty ancilla results in more uncomputation work, in repeating some operations twice and conditionally to do them once unconditionally, and in less efficient constructions in general.
+These inefficiencies stack multiplicatively when one construction uses another as a subroutine.
 
 
 \section{Future Work and Conclusion} \label{sec:conclusion}
 
 Of the $2n+1$ qubits our period-finding construction requires: $1$ is used for the phase estimation qubit, $n$ are used to store the work register, and $n$ are ancilla used to implement modular multiplication in terms of scaled modular addition.
-All the other constructions, for simpler arithmetic, need two or fewer dirty ancilla.
+All the other constructions, for simpler arithmetic, can be done with two or fewer dirty ancilla.
 Furthermore, because scaled modular addition is reduced into operations that have a $\Theta(n)$ surplus of unused qubits, in context there's always more than enough dirty ancilla available to implement the simpler arithmetic inline.
-There's so much slack in the simpler arithmetic constructions that improving the number of qubits used by period-finding effectively means improving the very first step, from multiplication to some other operation, and nothing else.
+There's so much slack in the simpler arithmetic constructions that improving the number of qubits used by period-finding effectively means improving the very first step, reducing multiplication into some other operation, and nothing else.
 
 For example, consider a situation where we could cut multiplication operations into two pieces.
 If we knew the factorization $p \cdot q$ of the modulus $R$, with $p$ and $q$ each having size $\approx n/2$, then the Chinese remainder theorem guarantees we could uniquely represent $x \mod R$ as the pair $(x \mod p, x \mod q)$.
 Multiplications of the half-sized values could use and re-use the same half-sized clean ancilla register, so there would be three half-sized registers (one for $x \mod p$, one for $x \mod q$, and one ancilla register) for a total qubit count of $\approx 1.5n$.
-Despite the large reduction in the number of ancilla available to them, the underlying constructions would still contribute no additional ancilla.
-(Note: because the initial value $x_0 = 1$ is trivial, and the final value is discarded, it's not necessary to implement circuits that translate between the Chinese-remainder representation and the usual 2s-complement representation.)
+Despite the large reduction in the number of ancilla available to the underlying arithmetic operations, they would still have more than enough ancilla and contribute no additional ancilla to the overall circuit.
+(Note: because the initial value $x_0 = 1$ is trivial, and the final value is measured or discarded, it's not necessary to implement circuits that translate between the Chinese-remainder representation and the usual 2s-complement representation.)
 Of course, since we use period-finding to compute the factorization of $R$, using the factorization of $R$ to optimize period-finding would be paradoxical.
 
 We presented Toffoli-based arithmetic circuits that reduce the smallest known number of qubits required to perform Shor's algorithm from $2n+2$ to $2n+1$.
 The constructions also reduce the number of {\em clean} qubits required by $n$, so the number of clean qubits required is now $n + O(1)$.
-We consider this to be a step towards a period-finding construction that uses only $n + O(1)$ qubits total, which could reduce the expected lifetime of current cryptographic keys by years (depending on how quickly quantum computers gain error-corrected capacity).
+We consider this to be a step towards a period-finding construction that uses only $n + O(1)$ qubits total, which could reduce the expected lifetime of current cryptographic keys by years (depending on the efficiency of the construction and how quickly quantum computers will gain error-corrected capacity).
 
 
 \bibliographystyle{plain}

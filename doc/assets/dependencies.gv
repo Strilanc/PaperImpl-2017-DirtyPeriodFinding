@@ -3,19 +3,20 @@
 digraph G {
   node [shape=box]
   
-  PeriodFinding [label="Period Finding\nfig 1, 2, 3"]
-  ModularPairedMultiply [label="Modular Bimultiply\n×K, ×K⁻¹ (mod R)\nfig 4"]
-  ModularMultiplyAccumulate [label="Modular Scaled-Accumulate\n+AK (mod R)\nfig 5"]
-  ModularDouble [label="Modular Double\n×2 (mod R)\nfig 6"]
-  ModularAdd [label="Modular Add/Offset\n+A (mod R)\nfig 7, 8, 9"]
-  ModularNegate [label="Modular Negate\n×-1 (mod R)\nfig 10"]
-  PivotFlip [label="PivotFlip\nfig 11, 12"]
+  PeriodFinding [label="Period Finding\nfig 2, 3, 4"]
+  ModularPairedMultiply [label="Modular Bimultiply\n×K, ×K⁻¹ (mod R)\nfig 5"]
+  ModularMultiplyAccumulate [label="Modular Scaled-Accumulate\n+AK (mod R)\nfig 6"]
+  ModularDouble [label="Modular Double\n×2 (mod R)\nfig 7"]
+  ModularAdd [label="Modular Add/Offset\n+A (mod R)\nfig 8, 9, 10"]
+  ModularNegate [label="Modular Negate\n×-1 (mod R)\nfig 11"]
+  PivotFlip [label="PivotFlip\nfig 12, 13"]
   Compare [label="Compare\n⊕A<B"]
-  SameSizeAdd [label="Same-Size Addition\n+A\nfig 13"]
-  Add [label="Addition / Offset\n+A\nfig 14, 15, 16"]
-  Increment [label="Increment\n+1\nfig 17, 18"]
-  RotateBits [label="Rotate Bits\n<<< K\nfig 20"]
-  ReverseBits [label="Reverse Bits\nfig 21"]
+  SameSizeAdd [label="Same-Size Addition\n+A\nfig 14"]
+  Add [label="Addition / Offset\n+A\nfig 15, 16, 17"]
+  Increment [label="Increment\n+1\nfig 18, 19"]
+  RotateBits [label="Rotate Bits\n<<< K\nfig 21"]
+  ReverseBits [label="Reverse Bits\nfig 22"]
+  MultiNot [label="Multi-Control Multi-Not\nfig 23, 24"]
   Leaf [label="NOT / CNOT / CCNOT"]
 
   edge [label="n"]
@@ -53,10 +54,17 @@ digraph G {
   edge [label=""]
   Increment -> SameSizeAdd
 
+  edge [label=""]
+  SameSizeAdd -> MultiNot
   edge [label="n"]
   SameSizeAdd -> Leaf
 
+  edge [label=""]
+  ReverseBits -> MultiNot
   edge [label="n"]
   ReverseBits -> Leaf
+
+  edge [label="n"]
+  MultiNot -> Leaf
 }
 
