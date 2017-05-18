@@ -506,8 +506,8 @@ Note that, for classical reversible computation, 1 dirty ancilla is the minimum 
 The parity of the state permutation performed by an increment operation is odd, but the parity of the permutation performed by any classical gate that doesn't cover the entire circuit is even, and odd-parity permutations can't be implemented by composing even-parity permutations.
 When quantum operations are available, the final ancilla can be cut without increasing the asymptotic cost (see figure \ref{fig:bootstrap-ancilla}).
 
-We tested individual constructions in \href{https://github.com/Strilanc/Quirk}{Quirk} and the full construction down to Toffoli gates in \href{https://github.com/ProjectQ-Framework/ProjectQ}{ProjectQ} \cite{projq2016}.
-The source code for the ProjectQ implementation, and an issue tracker for submitting errata, can be found at \href{https://github.com/Strilanc/PaperImpl-2017-DirtyPeriodFinding}{github.com/Strilanc/PaperImpl-2017-DirtyPeriodFinding}.
+We tested individual constructions in \href{https://github.com/Strilanc/Quirk}{Quirk} \cite{quirk2016} and the full construction down to Toffoli gates in \href{https://github.com/ProjectQ-Framework/ProjectQ}{ProjectQ} \cite{projq2016}.
+The source code for the ProjectQ implementation, and an issue tracker for submitting errata, can be found online at \href{https://github.com/Strilanc/PaperImpl-2017-DirtyPeriodFinding}{https://github.com/Strilanc/PaperImpl-2017-DirtyPeriodFinding}.
 
 Although the asymptotic costs of our constructions match previous work, the constant factors are significantly worse.
 For example, our equivalent of a controlled 32-qubit multiplication uses roughly 1.3 million Toffoli gates (the specific number depends on the factor, the modulus, whether or not a number of optimizations are used, and whether or not those optimizations apply to a given case).
@@ -526,11 +526,11 @@ There's so much slack in the simpler arithmetic constructions that improving the
 For example, consider a situation where we could cut multiplication operations into two pieces.
 If we knew the factorization $p \cdot q$ of the modulus $R$, with $p$ and $q$ each having size $\approx n/2$, then the Chinese remainder theorem guarantees we could uniquely represent $x \mod R$ as the pair $(x \mod p, x \mod q)$.
 Multiplications of the half-sized values could use and re-use the same half-sized clean ancilla register, so there would be three half-sized registers (one for $x \mod p$, one for $x \mod q$, and one ancilla register) for a total qubit count of $\approx 1.5n$.
-Despite the large reduction in the number of ancilla available to the underlying arithmetic operations, they would still have more than enough ancilla and contribute no additional ancilla to the overall circuit.
+Despite the large reduction in the number of ancilla available to the underlying arithmetic operations, each operation would still have more than enough ancilla and contribute no additional ancilla to the overall circuit.
 (Note: because the initial value $x_0 = 1$ is trivial, and the final value is measured or discarded, it's not necessary to implement circuits that translate between the Chinese-remainder representation and the usual 2s-complement representation.)
 Of course, since we use period-finding to compute the factorization of $R$, using the factorization of $R$ to optimize period-finding would be paradoxical.
 
-We presented Toffoli-based arithmetic circuits that reduce the smallest known number of qubits required to perform Shor's algorithm from $2n+2$ to $2n+1$.
+In this paper we presented Toffoli-based arithmetic circuits that reduce the smallest known number of qubits required to perform Shor's algorithm from $2n+2$ to $2n+1$.
 The constructions also reduce the number of {\em clean} qubits required by $n$, so the number of clean qubits required is now $n + O(1)$.
 We consider this to be a step towards a period-finding construction that uses only $n + O(1)$ qubits total, which could reduce the expected lifetime of current cryptographic keys by years (depending on the efficiency of the construction and how quickly quantum computers will gain error-corrected capacity).
 
