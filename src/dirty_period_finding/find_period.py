@@ -2,13 +2,14 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import fractions
 import math
 import random
 from fractions import Fraction
 
 from projectq import MainEngine
-from projectq.backends import Simulator
-from projectq.cengines import DecompositionRuleSet
+from projectq.backends import Simulator, ResourceCounter
+from projectq.cengines import DecompositionRuleSet, DummyEngine
 from projectq.ops import X, Z
 from projectq.setups.decompositions import swap2cnot
 from projectq.types import Qureg
@@ -79,8 +80,9 @@ def sample_period(base,
     return frac.limit_denominator(modulus - 1).denominator
 
 
-def main():
+def main_find_period():
     sim = Simulator()
+    cnt = ResourceCounter()
     eng = MainEngine(backend=sim, engine_list=[
         AutoReplacerEx(DecompositionRuleSet(modules=[
             addition_rules,
@@ -103,6 +105,7 @@ def main():
             allow_single_qubit_gates=True,
             allow_classes=[]
         ),
+        cnt,
     ])
 
     modulus = 11 * 5
@@ -129,6 +132,58 @@ def main():
 
     assert before == after
     print(u == 1 or u == -1 % modulus)
+    print(cnt)
+    print("Total gates: {}".format(sum(e for e in cnt.gate_counts.values())))
+
+
+def main_count_gates():
+    a = AutoReplacerEx(DecompositionRuleSet(modules=[
+        addition_rules,
+        increment_rules,
+        modular_addition_rules,
+        modular_bimultiplication_rules,
+        modular_double_rules,
+        modular_negate_rules,
+        modular_scaled_addition_rules,
+        multi_not_rules,
+        offset_rules,
+        pivot_flip_rules,
+        reverse_bits_rules,
+        rotate_bits_rules,
+        swap2cnot,
+        comparison_rules,
+    ]))
+
+    for i in range(3, 10):
+        m = 1 << i
+        m_max = 1 << m
+        x = 2
+        modulus = 2
+        while modulus % 2 == 0 or fractions.gcd(x, modulus) != 1:
+            modulus = random.randint(m_max // 2 + 1, m_max - 1)
+            x = random.randint(1, modulus - 1)
+        cnt = ResourceCounter()
+        eng = MainEngine(backend=DummyEngine(), engine_list=[
+            a,
+            LimitedCapabilityEngine(
+                allow_toffoli=True,
+                allow_single_qubit_gates=True,
+                allow_classes=[]
+            ),
+            cnt,
+        ])
+        v1 = eng.allocate_qureg(m)
+        v2 = eng.allocate_qureg(m)
+        c = eng.allocate_qubit()
+        ModularBimultiplicationGate(x, modulus) & c | (v1, v2)
+        print()
+        print("Qubit Count: {}".format(m))
+        print(cnt)
+
+
+
+def main():
+    main_count_gates()
 
 
 if __name__ == "__main__":
