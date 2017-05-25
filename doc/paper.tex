@@ -32,30 +32,52 @@ In section \ref{sec:construct} we describe the circuit constructions we use to r
 Then, in section \ref{sec:costs}, we discuss the novelty and comparative costs of the presented circuit constructions.
 Finally, section \ref{sec:conclusion} concludes with a discussion of possible future improvements.
 
-All constructions in this paper use a 2s-complement representation of integers, and all diagrams order qubits from least significant bit (LSB) at the top to most significant bit (MSB) at the bottom.
-Nearly all presented circuit constructions are classical, and the required dirty qubit counts we note and show in diagrams are in terms of those classical constructions.
-(The quantum trick shown in figure \ref{fig:bootstrap-ancilla} can cut dirty ancilla(e) from several of our constructions, but only in places that don't affect the overall total for period-finding.)
+All constructions in this paper use a two's-complement representation of integers, and all diagrams order qubits from least significant bit (LSB) at the top to most significant bit (MSB) at the bottom.
 
-For clarity, circuit diagrams will divide operations into separate input and output parts, with inputs shaded gray, when applicable.
-For completeness, even when the period finding reduction doesn't produce a controlled version of an operation, we nevertheless provide controllable constructions that scale linearly with the number of controls.
-For brevity, we take for granted that each circuit's inverse operation is decomposed into the same operations as the original operation but run in reverse order and with each sub-operation inverted (a decrement is a reversed increment, a multiply-add is a reversed multiply-subtract, a modular division is a reversed modular multiplication, and so forth).
+All our circuit diagrams annotate operations with the number of clean and/or dirty ancillae they need.
+For example, a dashed line from an operation down to a triangle inscribed with "3 dirty" means that the operation needs 3 dirty ancilla.
+If there are 3 unused wires that the operation can borrow, then the triangle will be green and a note of "(satisfied)" will be written underneath.
+If there are not enough unused wires shown in the diagram, the triangle will be yellow.
 
-We do not attempt to give reasonable behavior to modular arithmetic circuits applied to out of range values (ones equal to or larger than the modulus).
+The ancillae counts shown in diagrams and discussed in the text are not optimal; they are entirely based on what the constructions we discuss in this paper achieve.
+Nearly all the circuit constructions we present are classical reversible circuits (i.e. they do not use any quantum operations), so tricks such as the bootstrapping shown in figure \ref{fig:bootstrap-ancilla} could cut the ancilla count of several of the constructions.
+However, none of these improvements decrease the ancillae required at a crucial bottleneck, and so they do not reduce the number of qubits required by our construction of Shor's algorithm.
+
+To avoid ambiguity, circuit diagrams will divide multi-register operations into separate parts.
+For example, for an addition operation that adds a register $x$ into a register $y$ (i.e. performs $|x\rangle |y\rangle \rightarrow |x\rangle |y + x \pmod{2^n} \rangle$), we will place a light-gray box with the text ``Input A" over the wires corresponding to $x$ and a white box with the text ``+A" over the wires corresponding to $y$.
+The ``A" symbol refers to the value of the input register, in the computational basis, at the time of the operation.
+Diagrams will often use a sequence of operations each with their own ``Input A" specific to that operation.
+This re-use of ``A" does not indicate any relation between those inputs.
+The use of ``A" is merely a convention for indicating how the input-indicating box and the effect-indicating box are supposed to combine to form a single operation.
+
+In the case of operations parametrized by compile-time constants, diagrams will use the letters "K" and/or "R".
+For example, a box showing "+K (mod R)" refers to the modular-offset operation $|x\rangle \rightarrow |x+K \pmod{R}\rangle$.
+We always use $R$ t to refer to the modulus that is factored by Shor's algorithm.
+In several constructions we assume that $R$ is odd.
+Removing factors of 2 from a factoring problem is trivial, so this assumption does not decrease the generality of the construction.
+
+Because adding a constant into a register is more expensive than adding one register into another, we avoid ambiguity between the two by always referring to an operation that adds a constant as an "offset operation".
+We will refer to the operation that adds one register into another as just ``addition" or, when needed for clarity, ``enregistered addition".
+
+For completeness, even when the period finding reduction doesn't require a controlled version of an operation, we nevertheless provide a controllable construction that scale linearly with the number of controls.
+For brevity, we take for granted that each circuit's inverse operation is decomposed into the same operations as the original operation but run in reverse order and with each sub-operation inverted (a decrement is a reversed increment, a multiply-add is a reversed multiply-subtract, a modular division is a reversed modular multiplication, a modular halving is a reversed modular double, and so forth).
+
+We do not attempt to define or implement reasonable behavior for modular arithmetic circuits applied to out of range values (ones equal to or larger than the modulus).
 This {\em includes input values}.
 For example, if our modular addition construction ($x \mathrel{{+}{=}} y \pmod{R}$) is applied to a $y \geq R$, then we don't guarantee that $y \mod R$ will be added into $x$ or that the operation will commute with other additions or that anything sensible at all will happen.
 If the precondition $y < R$ is violated, what occurs is undefined behavior \cite{c11}.
 
 
-\section{Period Finding into Toffolis} \label{sec:construct}
+\section{Constructions} \label{sec:construct}
 
-Our reduction from period finding to constant-sized gates uses many circuit constructions.
+Our reduction, from the period finding step of Shor's algorithm down to constant-sized gates, uses many circuit constructions.
 Figure \ref{fig:dependencies} shows an overview of the various operations we will use, and the path through them that we will take.
 
 \begin{figure}
   \centering
   \includegraphics[height=17.3cm]{assets/dependencies.png}
   \caption{
-    Meta-figure showing the tagged transitive reduction of dependencies between constructions in our paper.
+    Graph of the transitive reduction of dependencies between constructions in our paper.
     Edge labels indicate which constructions use a dependency more than a constant number of times.
   }
   \label{fig:dependencies}
@@ -69,20 +91,25 @@ Figure \ref{fig:dependencies} shows an overview of the various operations we wil
     \includegraphics[width=\linewidth]{assets/shor-period-finding.png}
   }
   \caption{\em
-	High-level period finding circuit \cite{Shor1999}.
-	$R$ is the modulus being queried, $B$ is a randomly chosen base, $n$ is the number of bits needed to store $R$, and $p \in \Theta(n)$ controls the precision of the phase estimation step.
+	High-level definition of the period finding circuit \cite{Shor1999} used by Shor's algorithm.
+	$R$ is the modulus and the number to be factored, $B$ is a randomly chosen base, $n$ is the number of bits needed to store $R$, and $p \in \Theta(n)$ controls the precision of the phase estimation step.
     The triangles indicate how many ancillae are needed ``behind the scenes", by our constructions, to perform an operation.
 	Recovering the period requires classical post-processing of the sampled output.
   }
   \label{fig:period-finding}
 \end{figure}
 
-A high-level view of the circuit for period finding on modular exponentiation, the core quantum subroutine of Shor's quantum factoring algorithm \cite{Shor1999}, is shown in figure \ref{fig:period-finding}.
-The circuit starts by preparing a uniform superposition $|\psi_0\rangle = \sqrt{2^{-n}} \sum_{k=0}^{2^n-1} |k\rangle$, then uses the $\times B^A {\pmod R}$ operation to separate that superposition into equivalence classes modulo the unknown period $l$ of said operation.
-That is to say, w.l.o.g. the state ends up equal to $|\psi_{1,x}\rangle = \sqrt{l 2^{-n}} \sum_{k=0}^{(2^n/l)-1} |l k + x \rangle$ for some $x$.
+A high-level view of the circuit for period finding applied to modular exponentiation, the core quantum subroutine of Shor's quantum factoring algorithm \cite{Shor1999}, is shown in figure \ref{fig:period-finding}.
+
+Before the quantum circuit is constructed, a base $B$ is chosen at random.
+The randomly chosen $B$ must be co-prime to $R$.
+When a $B$ is accidentally chosen that is not co-prime to $R$, the lucky victim can instead factor $R$ by recursively factoring $R_1 = \gcd(B, R)$ and $R_2 = R / \gcd(B, R)$.
+
+The circuit begins by preparing a uniform superposition $|\psi_0\rangle = \sqrt{2^{-n}} \sum_{k=0}^{2^n-1} |k\rangle$, then uses the $\times B^A {\pmod R}$ operation to separate that superposition into equivalence classes modulo the unknown period $l$ of this operation.
+That is to say, w.l.o.g. the state ends up equal to $|\psi_{1,x}\rangle = \sqrt{l 2^{-n}} \sum_{k=0}^{\approx (2^n/l)-1} |l k + x \rangle$ for some $x$.
 The circuit then applies an inverse Fourier transform to the state.
 Fourier transforming a uniform signal with period $l$ produces a spectrum with peaks near $N \cdot 0/l$, $N \cdot 1/l$, $N \cdot 2/l$, ..., $N \cdot (p-1)/l$.
-Shor's algorithm recovers the period $l$ by sampling values $s_i$ from said spectrum, then using a continued fractions algorithm to compute the denominator of the fraction (with denominator below $R$) that is closest to $s_i/N$.
+Shor's algorithm recovers the period $l$ by sampling values $s_i$ from this spectrum, then using a continued fractions algorithm to compute the denominator of the fraction (with denominator below $R$) that is closest to $s_i/N$.
 
 Because period-finding measures all qubits immediately after performing a QFT, most of the transformed qubits can be measured earlier than shown.
 In fact, each qubit can be measured so early that the next qubit needed for the QFT does not even need to be initialized yet!
@@ -93,7 +120,7 @@ The only non-trivial operation is (a), the controlled modular multiplication of 
 
 We perform modular multiplication with multiply-accumulates and an ancilla register as in \cite{beauregard2003}.
 However, to allow our ancilla register to be mostly dirty, we extend the operation so that it has a well defined effect on the second register: multiplying by the inverse factor.
-We will refer to this combined multiply-A-and-inverse-multiply-B operation as a ``bimultiply".
+We will refer to this combined operation as a ``bimultiply".
 
 The bimultiplications we perform throughout the algorithm do change the value of the ancilla register, but after the usual end of the circuit we can undo the damage.
 The key insight is that the work register is initialized to $|1\rangle$ and gets multiplied by constants inverse to the ones trashing the dirty ancilla register.
@@ -102,7 +129,7 @@ We measure the work register to recover the fixup factor needed to restore the d
 Figure \ref{fig:period-finding-solo-phase-qubit-explicit-dirty-register} shows this construction.
 
 Because our modular circuit constructions would have undefined behavior if any register has a value equal to or larger than $R$, we need the ancilla register to contain a value less than $R$.
-We ensure this by requiring that the ancilla register's MSB be $|0\rangle$ (i.e. clean) and that the registers be as small as possible (i.e. have size $n = \lceil \lg_2(R-1) \rceil$).
+We ensure this by requiring that the ancilla register's MSB be $|0\rangle$ (i.e. clean) and that the registers be as small as possible (i.e. have size $n = \lceil \lg_2(R-1) \rceil$, because only values up to $R-1$ need to be stored).
 
 \begin{figure*}
   \centering
@@ -137,11 +164,11 @@ As in \cite{beauregard2003}, we perform controlled modular multiplication with a
 However, to allow the second register to be dirty, we use an additional scaled-accumulate as well as a negation operation.
 See figure \ref{fig:controlled-modular-multiply} for the circuit diagram.
 
-To show that the circuit works, suppose that the two registers start in the state $(a, b)$, working modulo $R$.
-By scale-adding the first register times $K$ into the second register, the system advances to $(a, b+aK)$.
-Then a scale-subtract times $K^{-1}$ out of the first register puts the system into the state $(a-bK^{-1}-aKK^{-1}, b+aK)$, which is just $(-bK^{-1}, b+aK)$.
-Next, we cancel the $b$ term in the second register by scale-adding the first register times $K$ into it again, leaving $(-bK^{-1}, b+aK-bK^{-1} \cdot K)$ which is simply $(-bK^{-1}, aK)$.
-Finally, we swap the terms and negate the second term to get $(aK, bK^{-1})$ as desired.
+To show that the circuit works, suppose that the two registers start in the state $(x, y)$, working modulo $R$.
+We scale-add the first register times $K$ into the second register to produce the state $(x, y+xK)$.
+Then a scale-subtract times $K^{-1}$ out of the first register puts the system into the state $(x-yK^{-1}-xKK^{-1}, y+xK)$, which is just $(-yK^{-1}, y+xK)$.
+Next, we cancel the $y$ term in the second register by scale-adding the first register times $K$ into it again, leaving $(-yK^{-1}, y+xK-yK^{-1} \cdot K)$ which is simply $(-yK^{-1}, xK)$.
+Finally, we swap the terms and negate the second term to get $(xK, yK^{-1})$ as desired.
 
 In the case where $K$ has no multiplicative inverse modulo $R$, this construction will not work (it would define an invalid irreversible operation).
 However, that would mean $K$ is a factor of $R$; a case that the very lucky user can check for and handle classically before bothering to factor $R$ with a quantum computer.
@@ -153,6 +180,7 @@ However, that would mean $K$ is a factor of $R$; a case that the very lucky user
     Controlled modular bimultiplication, with a constant multiplier $K$, using three modular scaled-accumulates and a swap.
     $K$ must have a multiplicative inverse modulo $R$.
     Uses no ancillae, $O(c + n^2 \lg n)$ gates, and $O(c + n^2)$ depth where $c$ is the number of controls and $n$ is the register size.
+    The negation operation requires 2 dirty ancillae, but notice there are free wires in the other register that can be borrowed, so the overall construction requires no additional dirty ancilla (for non-trivial $n$).
   }
   \label{fig:controlled-modular-multiply}
 \end{figure}
@@ -168,13 +196,13 @@ See figure \ref{fig:controlled-modular-scale-accumulate}.
 
 The conditional offset and modular doubling operations need a dirty bit, but for non-trivial $n$ there are more than enough unused bits available to borrow, so the circuit as a whole doesn't require any dirty bits.
 
-Note that the modular doublings require $R$ to be odd, since otherwise the operation would be irreversible.
+Note that the modular doublings (and halvings) require $R$ to be odd, since otherwise the operation would be irreversible.
 However, given that in the intended use case $R$ is a number to be factored, it is reasonable to require callers to have factored out multiples of two beforehand.
 
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{assets/controlled-modular-multiply-accumulate.png}
-  \caption{\em
+  \caption{\emph{•}
     Reducing a controlled modular scale-accumulate, with a constant multiplier $K$, into the modular equivalent of shift-and-add.
     Requires the modulus $R$ to be odd.
     Uses no ancillae, $O(c + n^2 \lg n)$ gates, and $O(c + n^2)$ depth where $c$ is the number of controls and $n$ is the register size.
@@ -185,25 +213,76 @@ However, given that in the intended use case $R$ is a number to be factored, it 
 
 \subsection{Modular Doubling}
 
-To multiply a register by 2 modulo an odd $R$, we use controlled offsets and nots to align each half of the input state space against MSB boundaries.
-Once that's done, a left-rotate completes the operation by turning the MSB into the LSB (converting the alignment into interleaving).
-See figure \ref{fig:modular-double}.
+To multiply a register by 2 modulo an odd $R$, we note that the permutation this operation performs is to take the values from $[(R+1)/2, R)$, the top half, and interleave them between the values from $[0, (R+1)/2)$, the bottom half.
+
+We can perform this interleaving by first offset-ing the top half up to $[2^{n-1}, 2^{n-1}+(R-1)/2)$, i.e. aligning it with the MSB boundary, and then performing a left-rotation of the register bits.
+This moves the MSB to the LSB, converting the alignment into interleaving.
+
+Because it's expensive to perform an offset that affects values above $R/2$ while leaving values below $R/2$ alone, the circuit shown in figure \ref{fig:modular-double} uses a different alignment strategy.
+It starts by offset-ing the whole range down by $\lceil R/2 \rceil$, which wraps the bottom half of the input around to the top of the register's range.
+This offset also aligns what was originally the top half against the bottom of the register range.
+Then it uses a controlled offset to move just the top half of the register up by $\lceil R/2 \rceil$, re-wrapping what was originally the bottom-half past the top and around to the middle, aligning with the MSB boundary.
+The two offsets aligned the top half against 0 and the bottom half against $2^{n-1}$, but we want the reverse, so the problem is fixed by toggling the MSB.
+With the desired alignment achieved, the circuit finishes with a left-rotate.
+
 
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{assets/controlled-modular-double.png}
   \caption{\em
-    Controlled modular doubling in $O(c + n \lg n)$ gates, $O(c + n)$ depth, with 2 dirty ancillae.
+    Controlled modular doubling.
     $R$ must be odd.
-    Uses 1 dirty ancilla, $O(c + n \lg n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
+    Uses 1 dirty ancilla, $O(c + n \lg n)$ gates, and $O(c + n)$ depth, where $c$ is the number of controls and $n$ is the register size.
   }
   \label{fig:modular-double}
 \end{figure}
 
 
+\subsection{Pivot-Flips} \label{sec:pivot-flips}
+
+We will implement both modular negation and modular offset/addition in terms of a non-standard operation we call a ``pivot-flip".
+A pivot-flip is an operation that reverses the order of states less than a given pivot value, without affecting other states.
+For example, a pivot-flip with the pivot equal to 4 would swap $|0\rangle$ and $|3\rangle$, swap $|1\rangle$ and $|2\rangle$, and leave all other states untouched.
+
+The exact permutation performed by a pivot-flip with pivot equal to $A$ is:
+
+$$\text{PivotFlip}_A = \sum_{i=0}^{A-1} |A-i-1\rangle \langle i| + \sum_{i=A}^{N-1} |i\rangle \langle i|$$
+
+To perform a pivot-flip efficiently, we use the fact that $x \rightarrow \lnot(x - A)$ nearly does what is required: it flips the range below $A$ but unfortunately also flips the range above-and-including $A$.
+However, because $x \rightarrow \lnot(x - A)$ is its own inverse, the operation can be ``toggle-controlled'', where the operation undoes itself unless a controlling qubit is toggled between two applications.
+Also, because the operation doesn't change whether any state is above or below the pivot, the controlling qubit can be toggled by a comparison of the target itself against the pivot (even though the target is being operated on).
+
+See figures \ref{fig:controlled-pivot-flip} and \ref{fig:controlled-const-pivot-flip} for the circuit diagrams.
+For states that are less than the pivot $A$, the comparison against the pivot keeps toggling the ancilla and exactly one of the controlled subtract-and-inverts will fire.
+For other states, the ancilla does not change and so the subtract-and-inverse happens either no times or two times (undoing itself) for a net effect of no effect.
+
+Note that, depending on whether or not the pivot is a compile-time constant or another qubit register, different subtraction constructions are used when reducing further.
+This distinction matters because the constant-offset construction uses $O(n \lg n)$ gates \cite{haner2016} instead of the $\Theta(n)$ gates used by enregistered addition \cite{takahashi2005}.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{assets/controlled-pivot-flip.png}
+  \caption{\em
+    Controlled pivot-flip circuit with an enregistered pivot.
+    Uses $2$ dirty ancillae, $O(c + n \lg n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
+  }
+  \label{fig:controlled-pivot-flip}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{assets/controlled-const-pivot-flip.png}
+  \caption{\em
+    Controlled pivot-flip circuit with a constant pivot.
+    Uses $2$ dirty ancillae, $O(c + n \lg n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
+  }
+  \label{fig:controlled-const-pivot-flip}
+\end{figure}
+
+
 \subsection{Modular Addition / Offset}
 
-As shown in figure \ref{fig:mod-add-from-pivot-flip-bars}, a modular addition is three pivot-flips (see section \ref{sec:pivot-flips}).
+As shown in figure \ref{fig:mod-add-from-pivot-flip-bars}, a modular addition can be implemented by three pivot-flips.
 To add $A$ into a register modulo $R$, perform pivot-flips with the pivot at $R-A$, then $R$, then $A$.
 (The pivot-flip at $R$ can be simplified because the values above $R$ don't matter.)
 See figure \ref{fig:controlled-modular-add} for the circuit.
@@ -258,48 +337,6 @@ See figure \ref{fig:negate-mod}.
     Uses $2$ dirty ancillae, $O(c + n \lg n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
   }
   \label{fig:negate-mod}
-\end{figure}
-
-
-\subsection{Pivot-Flips} \label{sec:pivot-flips}
-
-We implemented both modular negation and modular offset/addition in terms of a non-standard operation we call a ``pivot-flip".
-A pivot-flip is an operation that reverses the order of states less than a given pivot value, without affecting other states.
-For example, a pivot-flip with the pivot equal to 4 would swap $|0\rangle$ and $|3\rangle$, swap $|1\rangle$ and $|2\rangle$, and leave all other states untouched.
-
-The exact permutation performed by a pivot-flip with pivot equal to $A$ is:
-
-$$\text{PivotFlip}_A = \sum_{i=0}^{A-1} |A-i-1\rangle \langle i| + \sum_{i=A}^{N-1} |i\rangle \langle i|$$
-
-To perform a pivot-flip efficiently, we use the fact that $x \rightarrow \lnot(x - A)$ nearly does what is required: it flips the range below $A$ but unfortunately also flips the range above-and-including $A$.
-However, because $x \rightarrow \lnot(x - A)$ is its own inverse, the operation can be ``toggle-controlled'', where the operation undoes itself unless a controlling qubit is toggled between two applications.
-Also, because the operation doesn't change whether any state is above or below the pivot, the controlling qubit can be toggled by a comparison of the target itself against the pivot (even though the target is being operated on).
-
-See figures \ref{fig:controlled-pivot-flip} and \ref{fig:controlled-const-pivot-flip} for the circuit diagrams.
-For states that are less than the pivot $A$, the comparison against the pivot keeps toggling the ancilla and exactly one of the controlled subtract-and-inverts will fire.
-For other states, the ancilla does not change and so the subtract-and-inverse happens either no times or two times (undoing itself) for a net effect of no effect.
-
-Note that, depending on whether or not the pivot is a compile-time constant or another qubit register, different subtraction constructions are used when reducing further.
-This distinction matters because the constant-offset construction uses $O(n \lg n)$ gates \cite{haner2016} instead of the $\Theta(n)$ gates used by enregistered addition \cite{takahashi2005}.
-
-\begin{figure}
-  \centering
-  \includegraphics[width=\linewidth]{assets/controlled-pivot-flip.png}
-  \caption{\em
-    Controlled pivot-flip circuit with an enregistered pivot.
-    Uses $2$ dirty ancillae, $O(c + n \lg n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
-  }
-  \label{fig:controlled-pivot-flip}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \includegraphics[width=\linewidth]{assets/controlled-const-pivot-flip.png}
-  \caption{\em
-    Controlled pivot-flip circuit with a constant pivot.
-    Uses $2$ dirty ancillae, $O(c + n \lg n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
-  }
-  \label{fig:controlled-const-pivot-flip}
 \end{figure}
 
 
