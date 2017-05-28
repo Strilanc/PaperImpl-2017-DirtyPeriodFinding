@@ -22,28 +22,30 @@ Ancillae may be initialized to a known state (``clean bit"), or be given to the 
 Clean bits are more valuable, allowing for simpler and more compact circuit constructions, but dirty bits are more plentiful, since any temporarily unused bit is a borrowable dirty bit.
 
 One part of a circuit can borrow dirty bits from another part of the same circuit, so circuit constructions that require only dirty bits are easier to apply under tight space constraints, or on circuit topologies where other ancillae are too far away to be acquired quickly.
-When attempting to reduce the number of bits or qubits required by a circuit, converting clean ancillae to dirty ancillae is a useful intermediate goal.
-In this paper, we reduce the number of qubits required to find the period of exponentiation, modulo an $n$-bit modulus, from $2n+2$ clean qubits \cite{takahashi2006, haner2016} to $n+2$ clean qubits and $n-1$ dirty qubits.
+When attempting to reduce the number of bits or qubits required by a circuit, replacing constructions that use clean ancillae with ones that use dirty ancillae is a useful intermediate goal.
+
+In this paper, we reduce the number of clean qubits required to factor an $n$-bit number with Shor's algorithm from $2n+2$ clean qubits \cite{takahashi2006, haner2016} to $n+2$ clean qubits assisted by $n-1$ dirty qubits.
 We do so without increasing the asymptotic costs, though the constant factors of our constructions are worse.
 
 Our paper is structured as follows.
-Section \ref{sec:introduction} introduces and describes the conventions our circuit constructions will follow.
-In section \ref{sec:construct} we describe the circuit constructions we use to reduce period finding into constant-sized gates, while tracking the number of required dirty ancillae.
+Section \ref{sec:introduction} introduces and describes the conventions our circuit constructions and circuit diagrams will follow.
+In section \ref{sec:construct} we describe all the circuit constructions we use to reduce the period finding step of Shor's algorithm into constant-sized gates, while tracking the number of required dirty ancillae.
 Then, in section \ref{sec:costs}, we discuss the novelty and comparative costs of the presented circuit constructions.
 Finally, section \ref{sec:conclusion} concludes with a discussion of possible future improvements.
 
 All constructions in this paper use a two's-complement representation of integers.
 When a result would exceed the size of a register, it wraps (i.e. all the non-modular arithmetic constructions we discus actually perform arithmetic modulo $2^n$, where $n$ is the size of the target register).
+
 All diagrams order qubits from least significant bit (LSB) at the top to most significant bit (MSB) at the bottom.
 
 All our circuit diagrams annotate operations with the number of clean and/or dirty ancillae they need.
-For example, a dashed line from an operation down to a triangle inscribed with "3 dirty" means that the operation needs 3 dirty ancilla.
+For example, a dashed line from an operation down to a triangle inscribed with ``3 dirty" means that the operation needs 3 dirty ancilla.
 If there are 3 unused wires that the operation can borrow, then the triangle will be green and a note of "(satisfied)" will be written underneath.
 If there are not enough unused wires shown in the diagram, the triangle will be yellow.
 
 The ancillae counts shown in diagrams and discussed in the text are not optimal; they are entirely based on what the constructions we discuss in this paper achieve.
-Nearly all the circuit constructions we present are classical reversible circuits (i.e. they do not use any quantum operations), so tricks such as the bootstrapping shown in figure \ref{fig:bootstrap-ancilla} could cut the ancilla count of several of the constructions.
-However, none of these improvements decrease the ancillae required at a crucial bottleneck, and so they do not reduce the number of qubits required by our construction of Shor's algorithm.
+Nearly all the circuit constructions we present are classical reversible circuits (i.e. they do not use any quantum operations), so tricks such as the ancilla bootstrap shown in figure \ref{fig:bootstrap-ancilla} could cut the ancilla count in several places.
+However, none of these improvements decrease the ancillae required at any crucial bottleneck, and so they do not reduce the number of qubits required by our overall construction of Shor's algorithm.
 
 To avoid ambiguity, circuit diagrams will divide multi-register operations into separate parts.
 For example, for an addition operation that adds a register $x$ into a register $y$ (i.e. performs $|x\rangle |y\rangle \rightarrow |x\rangle |y + x \pmod{2^n} \rangle$), we will place a light-gray box with the text ``Input A" over the wires corresponding to $x$ and a white box with the text ``+A" over the wires corresponding to $y$.
@@ -52,21 +54,23 @@ Diagrams will often use a sequence of operations each with their own ``Input A" 
 This re-use of ``A" does not indicate any relation between those inputs.
 The use of ``A" is merely a convention for indicating how the input-indicating box and the effect-indicating box are supposed to combine to form a single operation.
 
-In the case of operations parametrized by compile-time constants, diagrams will use the letters "K" and/or "R".
-For example, a box showing "+K (mod R)" refers to the modular-offset operation $|x\rangle \rightarrow |x+K \pmod{R}\rangle$.
-We always use $R$ t to refer to the modulus that is factored by Shor's algorithm.
+In the case of operations parametrized by compile-time constants, diagrams will use the letters ``K" and/or ``R".
+For example, a box showing ``+K (mod R)" refers to the modular-offset operation $|x\rangle \rightarrow |x+K \pmod{R}\rangle$.
+We always use $R$ to to refer to the modulus that is factored by Shor's algorithm.
 In several constructions we assume that $R$ is odd.
 Removing factors of 2 from a factoring problem is trivial, so this assumption does not decrease the generality of the construction.
 
-Because adding a constant into a register is more expensive than adding one register into another, we avoid ambiguity between the two by always referring to an operation that adds a constant as an "offset operation".
+Because adding a constant into a register is more expensive than adding one register into another, we avoid ambiguity between the two operations by always referring to the operation that adds a constant as an ``offset operation".
 We will refer to the operation that adds one register into another as just ``addition" or, if needed for clarity, ``enregistered addition".
 
 When an operation is controlled by a wire bundle, it is conditioned on all wires in the bundle.
 When a single-qubit gate is applied to a wire bundle, the gate applies separately to every wire.
-For example, when a not gate controlled by one wire bundle is applied to another wire bundle, every wire in the latter is toggled if and only if every wire in the former is on.
+For example, when a NOT gate controlled by one wire bundle is applied to another wire bundle, every wire in the latter is toggled when and only when every wire in the former is on.
 
-For completeness, even when the period finding reduction doesn't require a controlled version of an operation, we nevertheless provide a controllable construction that scale linearly with the number of controls.
-For brevity, we take for granted that each circuit's inverse operation is decomposed into the same operations as the original operation but run in reverse order and with each sub-operation inverted (a decrement is a reversed increment, a multiply-add is a reversed multiply-subtract, a modular division is a reversed modular multiplication, a modular halving is a reversed modular double, and so forth).
+For completeness, even when the period finding reduction doesn't require a controlled version of an operation, we nevertheless provide a controllable construction that scales linearly with the number of controls.
+
+For brevity, we take for granted that each circuit's inverse operation is decomposed into the same operations as the original operation but run in reverse order and with each sub-operation inverted.
+A decrement is a reversed increment, a multiply-add is a reversed multiply-subtract, a modular division is a reversed modular multiplication, a modular halving is a reversed modular double, and so forth.
 
 We do not attempt to define or implement reasonable behavior for modular arithmetic circuits applied to out of range values (ones equal to or larger than the modulus).
 This {\em includes input values}.
@@ -89,7 +93,7 @@ Figure \ref{fig:dependencies} shows an overview of the various operations we wil
   \label{fig:dependencies}
 \end{figure}
 
-\subsection{Period Finding}
+\subsection{Period Finding for Modular Exponentiation}
 
 \begin{figure}
   \centering
@@ -109,7 +113,7 @@ A high-level view of the circuit for period finding applied to modular exponenti
 
 Before the quantum circuit is constructed, a base $B$ is chosen at random.
 The randomly chosen $B$ must be co-prime to $R$.
-When a $B$ is accidentally chosen that is not co-prime to $R$, the lucky victim can instead factor $R$ by recursively factoring $R_1 = \gcd(B, R)$ and $R_2 = R / \gcd(B, R)$.
+When a $B$ that is not co-prime to $R$ is accidentally chosen, the lucky victim can instead factor $R$ by recursively factoring $R_1 = \gcd(B, R)$ and $R_2 = R / \gcd(B, R)$.
 
 The circuit begins by preparing a uniform superposition $|\psi_0\rangle = \sqrt{2^{-n}} \sum_{k=0}^{2^n-1} |k\rangle$, then uses the $\times B^A {\pmod R}$ operation to separate that superposition into equivalence classes modulo the unknown period $l$ of this operation.
 That is to say, w.l.o.g. the state ends up equal to $|\psi_{1,x}\rangle = \sqrt{l 2^{-n}} \sum_{k=0}^{\approx (2^n/l)-1} |l k + x \rangle$ for some $x$.
@@ -177,7 +181,7 @@ Next, we cancel the $y$ term in the second register by scale-adding the first re
 Finally, we swap the terms and negate the second term to get $(xK, yK^{-1})$ as desired.
 
 In the case where $K$ has no multiplicative inverse modulo $R$, this construction will not work (it would define an invalid irreversible operation).
-However, that would mean $K$ is a factor of $R$; a case that the very lucky user can check for and handle classically before bothering to factor $R$ with a quantum computer.
+However, that would mean $K$ is a factor of $R$; a case that can be checked for and handled classically before bothering to factor $R$ with a quantum computer.
 
 \begin{figure}
   \centering
@@ -219,16 +223,16 @@ However, given that in the intended use case $R$ is a number to be factored, it 
 
 \subsection{Modular Doubling}
 
-To multiply a register by 2 modulo an odd $R$, we note that the permutation this operation performs is to take the values from $[(R+1)/2, R)$, the top half, and interleave them between the values from $[0, (R+1)/2)$, the bottom half.
+To multiply a register by 2 modulo an odd $R$, we note that the permutation this operation performs is to take the values from $[(R+1)/2, R)$, the top-half of the valid range, and interleave them between the values from $[0, (R+1)/2)$, the bottom-half of the valid range.
 
-We can perform this interleaving by moving the top half up until it starts at $2^{n-1}$, i.e. aligns with the MSB boundary.
+We can perform this interleaving by moving the valid-top-half up until it starts at $2^{n-1}$, i.e. aligns with the MSB boundary.
 A left-rotate of the register bits then moves the MSB to the LSB, converting the alignment into interleaving.
 
 Because it's expensive to perform an offset that affects values above $R/2$ while leaving values below $R/2$ alone, the circuit shown in figure \ref{fig:modular-double} uses a different alignment strategy.
-It starts by offset-ing the whole range down by $\lceil R/2 \rceil$, which wraps the bottom half of the input around to the top of the register's range.
-This offset also aligns what was originally the top half against the bottom of the register range.
-Then the circuit uses a controlled offset to move just the top half of the register up by $\lceil R/2 \rceil$, re-wrapping what was originally the bottom-half past the top and around to the middle, aligning with the MSB boundary.
-The circuit then toggles the MSB, fixing the fact that, although the top half is aligned with 0 and the bottom half is aligned with $2^{n-1}$, that's exactly the reverse of what we want.
+It starts by offset-ing the whole range down by $\lceil R/2 \rceil$, which wraps the valid-bottom-half of the input around to the top of the register's range.
+This offset also aligns what was originally the valid-top-half against the bottom of the register range.
+Then the circuit uses a controlled offset to move just the top half of the register (including the invalid range above $R$) up by $\lceil R/2 \rceil$, re-wrapping what was originally the valid-bottom-half past the top and around to the middle, aligning it with the MSB boundary.
+The circuit then toggles the MSB, fixing the fact that, although the valid-top-half is aligned with 0 and the valid-bottom-half is aligned with $2^{n-1}$, that's exactly the reverse of what we want.
 With the desired alignment achieved, the circuit interleaves the two halves with a left-rotate.
 
 
@@ -271,6 +275,7 @@ Even at points where the target may or may not have been bi-flipped.
 See figures \ref{fig:controlled-pivot-flip} and \ref{fig:controlled-const-pivot-flip} for the circuit diagrams.
 For states that are less than the pivot, the comparison against the pivot keeps toggling the ancilla and exactly one of the controlled bi-flips will fire.
 For states equal to or larger than the pivot, the ancilla does not get toggled and so the bi-flips undo each other.
+Therefore only the range below the pivot is flipped.
 
 \begin{figure}
   \centering
@@ -298,10 +303,10 @@ For states equal to or larger than the pivot, the ancilla does not get toggled a
 
 As shown in figure \ref{fig:mod-add-from-pivot-flip-bars}, a modular addition can be implemented by three pivot-flips.
 To add $K$ into a register modulo $R$, perform pivot-flips with the pivot at $R-K$, then $R$, then $K$.
-(The pivot-flip at $R$ can be simplified because the values above $R$ don't matter.)
 See figure \ref{fig:controlled-modular-add} for the circuit.
+(An optimization we don't show is that, because the values above $R$ don't matter, the pivot-flip at $R$ can be replaced by a bi-flip.)
 
-Interestingly, modular addition can use its own controls as dirty bits that would otherwise be required.
+Interestingly, controlled modular addition can borrow its own controls as dirty bits.
 For modular offset (i.e. adding a compile-time constant into a register), the two dirty bits are required whether or not the operation is controlled.
 See figure \ref{fig:controlled-modular-offset}.
 
@@ -376,7 +381,7 @@ When $n$ dirty qubits are available, the overflow-predicting construction from \
     Controlled comparison.
     Uses $2$ dirty ancillae, $O(c + n \lg n)$ gates, and $O(c + n)$ depth where $c$ is the number of controls and $n$ is the register size.
   }
-  \label{fig:negate-mod}
+  \label{fig:compare}
 \end{figure}
 
 
@@ -402,31 +407,31 @@ When the value to be added into a register is a compile-time constant (i.e. when
 Their offset circuit, shown in figure \ref{fig:offset}, uses $O(n \lg n)$ gates, $O(n)$ depth, and one dirty ancilla.
 
 When the target register is larger than the input register, the addition circuit in fig \ref{fig:inlineadder} can be modified without increasing the asymptotic cost.
-We do this by removing the surround CNOTs and adding three increment/decrement operations to the circuit, as follows.
+We do this by removing the surrounding CNOTs and adding three increment/decrement operations to the circuit, as follows.
 (Note that, to avoid cyclic dependencies, the increment and decrement constructions described in the next subsection will only use the same-register-size adder.)
 
-First, because there are many target bits not reached by the time we have swept through the input, carry signals can't reach the high bit of the target register.
-We fix this by replacing innermost CNOT with a controlled increment.
-Second and third, because we're using the MSB of the input register to hold the carry signal, it causes an increment at the LSB instead of at the correct position.
+First, because there are many target bits not reached by the time we have swept through the entire input register, carry signals aren't reaching the high bit of the target register.
+We fix this by replacing innermost CNOT, the carry-propagating CNOT, with a controlled increment.
+Second and third, because we're using the MSB of the input register as the carry signal, it causes an increment at the LSB instead of at the correct position.
 We undo the LSB increment with a controlled decrement, and use a controlled increment to apply the MSB's effect where it should have actually gone.
 See the circuit diagram in figure \ref{fig:inline-adder-into-large}.
 
-To control addition gates, and offset gates, we use ``reverse-controlling".
-Reverse-controlling controls an operation by instead controlling simpler framing operations that, if preserve, reverse the effect of the framed operation.
-In particular, note that framing the target of a subtraction with NOT gates (i.e. applying a NOT gate to every target wire before and after the addition) reverses the subtraction into an addition.
+To control addition gates, and offset gates, we use ``commutator controlling": finding operations $G$ and $H$ such that their group-theory commutator $[G, H] = G \cdot H \cdot G^\dagger \cdot H^\dagger$ equals a desired operation $U$ and either $G$ or $H$ can be efficiently controlled.
+In particular, we focus on the case where $G^2 = U$ and $H$ satisfies $H \cdot G \cdot H^\dagger = G^\dagger$ (i.e. framing $H$ with $G$ inverts the effect of $H$).
 
-By following the framed-subtraction with an addition, we have created a controlled operation that almost does what is needed.
-When the controls are not satisfied, the NOT gates bordering the subtraction do not fire, the subtraction and addition cancel each other, and nothing happens.
-When the controls are satisfied, the NOT gates reverse the subtraction into an addition, that addition and the second addition both apply, and the input is added into the target twice.
-
-To add $A$ instead of $2 \cdot A$ into the target, we temporarily prepend a dirty bit onto the target register.
-See figure \ref{fig:controlled-addition}.
+In the case of addition, we have the property $\lnot (\lnot x + K) = \lnot (-x - 1 + K) = -(-x - 1 + K) - 1 = x-K$.
+So a valid inverting operation $H$ for addition is a NOT gate applied to every target wire; $H=X^{\otimes n}$.
+If we then consider $G=\text{S}_{-K}$, where $S$ is the offset-by-$K$ operation, we find that $[G, H] = \text{S}_{2K}$.
+We can control this constructed $\text{S}_{2K}$ operation by adding controls only to the multi-not operation $H$, which is cheap to do.
+To add $K$ instead of $2K$, we temporarily prepend a dirty LSB onto the target register.
+We show this construction in figure \ref{fig:controlled-addition}.
 
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{assets/offset.png}
   \caption{\em
       Offset circuit from \cite{haner2016}.
+      $e$ is either 0 or 1.
       Uses $1$ dirty ancilla, $O(n \lg n)$ gates, and $O(n)$ depth (by overlapping the recursive cases).
   }
   \label{fig:offset}
@@ -447,9 +452,10 @@ See figure \ref{fig:controlled-addition}.
   \centering
   \includegraphics[width=\linewidth]{assets/controlled-addition.png}
   \caption{\em
-  	Reducing controlled addition to uncontrolled addition.
-  	Uses $O(c + n)$ gates, $O(c + n)$ depth, and a dirty ancilla.
-  	When applied to offset gates, uses $O(c + n \lg n)$ gates, $O(n + c)$ depth, and two dirty ancillae.
+    Reducing controlled addition to uncontrolled addition.
+    Uses $O(c + m)$ gates, $O(c + m)$ depth, and a dirty ancilla.
+    When applied to offset gates, uses $O(c + m \lg m)$ gates, $O(m + c)$ depth, and two dirty ancillae.
+    $c$ is the number of controls, $n$ is the size of the input, and $m > n$ is the size of the target register.
   }
   \label{fig:controlled-addition}
 \end{figure}
@@ -471,23 +477,28 @@ To improve from $n$ dirty bits to the single dirty bit used by the circuit in fi
 A high-half that is incremented only if all of the low bits are on, and a low-half that is unconditionally incremented.
 
 If the increment is uncontrolled, the low-half can be incremented with the double-subtraction trick by borrowing the high half.
-If there are controls, we combine the double-subtraction trick with the reverse-control technique we used to control addition.
-(Interestingly, combining the two fixes the double-effect problem that would have otherwise required us to prepend a dirty LSB onto the low-half.)
+When there are controls, we instead increment the low-half using a commutator-control construction where one operation subtracts the ancilla register out of the target and the other applies a NOT gate to every input wire and target wire.
+This works because $\lnot (\lnot T + \lnot K) - K = \lnot (-T - 1 - K - 1) - K = (T+2+K) - 1 - K = T + 1$.
 
-The high-half is trickier to deal with; we want to borrow the low-half for the double-subtraction trick, but the low-half is being used as a control and so can't be borrowed.
-To work around not being able to operate on the borrowed low-half bits while using them as a control, we use reverse-controlling and some knowledge of what state the low-half must be in if operations it is controlling are firing.
+The high-half is trickier to deal with.
+We want to borrow the low-half for the double-subtraction trick, but the low-half is being used as a control and so can't be borrowed.
+To work around not being able to operate on the borrowed low-half bits while using them as a control, we use more commutator control tricks and some knowledge of what state the low-half must be in if operations it is controlling are firing.
 
-To setup the reverse-control, we add and subtract the low-half out of the high-half, but frame the addition with NOT gates controlled by all bits in the low half.
+We add and subtract the low-half out of the high-half, but frame the addition with NOT gates controlled by all bits in the low half.
 When any of the bits in the low-half is off, the NOT gates don't fire and the addition and subtraction will cancel each other.
 When all of the bits in the low-half are on, i.e. when the low-half is storing the two's complement representation of -1, the NOT gates do fire.
-This reverses the addition into a subtraction, and the low-half (which is storing -1) is subtracted out of the high-half twice.
+This inverts the addition into a subtraction, and the low-half (which is storing -1) is subtracted out of the high-half twice.
 Therefore the high-half was incremented by 2.
-To halve the +2 into a +1, we prepend a dirty least-significant-bit onto the target register.
+To halve the +2 into a +1, we prepend a dirty LSB onto the target register.
 
 Recall that, earlier in the paper, we used increments and decrements to implement addition where the target was larger than the input.
-To avoid an expensive cyclic dependency in our increment construction, it must not use larger-target addition; we can only perform additions and subtractions with input and target registers of the same size.
-This means that the construction described so far in this section only works for odd-sized registers.
-To handle even-sized registers, simply treat the LSB as a control determining whether the odd-sized remainder of the register is incremented then toggle the LSB.
+To avoid an expensive cyclic dependency in our increment construction, the additions we use must not be larger-target additions.
+(Also, when the two registers are not the same size, they define arithmetic modulo different powers of 2.
+This breaks properties such as $T + \lnot K = T - K - 1$.)
+
+Because we can only perform additions and subtractions with input and target registers of the same size, the construction described so far in this section only works for odd-sized registers.
+To handle even-sized registers, we decompose the increment into a controlled-increment and a NOT gate.
+We use the LSB as a control determining whether the (odd-sized) rest of the register is incremented, and then toggle the LSB.
 
 \begin{figure}
   \centering
@@ -626,12 +637,14 @@ Despite the large reduction in the number of ancillae available to the underlyin
 (Note: because the initial value $x_0 = 1$ is trivial, and the final value is measured or discarded, it's not necessary to implement circuits that translate between the Chinese-remainder representation and the usual 2s-complement representation.)
 Of course, since we use Shor's algorithm to compute the factorization of $R$, using the factorization of $R$ to optimize Shor's algorithm would be paradoxical.
 
-In this paper we presented Toffoli-based arithmetic circuits that reduce the smallest known number of qubits required to perform Shor's algorithm from $2n+2$ to $2n+1$.
-The constructions also reduce the number of {\em clean} qubits required by $n$, so the number of clean qubits required is now $n + O(1)$.
-We consider this to be a step towards a construction for Shor's algorithm that uses only $n + O(1)$ qubits total.
-By allowing keys to fit into quantum computers with half as much space, such a construction could reduce the expected time until current cryptographic keys can be broken by months or years (depending on how quickly computers gain capacity, the constant factors of the construction, and the trade-offs between space, error correction, and qubit coherence time).
+In this paper we described how to perform various arithmetic operations using only dirty ancilla.
+We also described various techniques we used to find the constructions: pivot flipping, toggle controlling, commutator controlling, and exploration by directly manipulating circuit diagrams.
+We showed how these constructions reduce the smallest known number of qubits required to perform Shor's algorithm from $2n+2$ to $2n+1$.
+The constructions also reduce the number of {\em clean} qubits required by $n$.
 
-We also described how to perform various arithmetic operations using only dirty ancilla, and the techniques we used to find the constructions (e.g. reverse controlling, toggle controlling, pivot flipping, and exploration by directly manipulating circuit diagrams).
+The number of clean qubits required to perform Shor's algorithm is now $n + O(1)$.
+We consider this improvement to be a step towards a construction for Shor's algorithm that uses only $n + O(1)$ qubits total.
+By allowing keys to fit into quantum computers with half as much space, such a construction could reduce the time until it's possible to break current cryptographic keys by months or years (depending on how quickly computers gain capacity, the constant factors of the construction, and the trade-offs between space, error correction, and qubit coherence time).
 
 
 \bibliographystyle{plain}
