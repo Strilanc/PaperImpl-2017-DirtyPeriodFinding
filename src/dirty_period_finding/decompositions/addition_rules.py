@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 from projectq.cengines import DecompositionRule
-from projectq.meta import Control
 from projectq.ops import X
 
 from dirty_period_finding.extensions import (
@@ -18,6 +17,8 @@ from dirty_period_finding.gates import (
     Increment,
     Decrement,
     MultiNot,
+    Add,
+    Subtract,
 )
 
 
@@ -182,60 +183,62 @@ def do_addition(input_reg, target_reg, dirty, controls):
 
     # Remove controls with double-add-invert trick.
     expanded = [dirty] + target_reg
-    for _ in range(2):
-        do_addition_no_controls(input_reg, expanded)
-        MultiNot & controls | expanded
-        MultiNot | expanded
+    Add | (input_reg, expanded)
+    MultiNot & controls | expanded
+    Subtract | (input_reg, expanded)
+    MultiNot & controls | expanded
 
 
-def do_addition_with_all_ops_controlled(eng, input_reg, target_reg, controls):
-    with Control(eng, controls):
-        do_addition_no_controls(input_reg, target_reg)
+# Trivial case: empty input or empty target. Do nothing.
+decompose_addition_no_op = DecompositionRule(
+    gate_class=AdditionGate,
+    gate_decomposer=lambda cmd: None,
+    gate_recognizer=lambda cmd:
+        len(cmd.qubits[0]) == 0 or len(cmd.qubits[1]) == 0)
+
+# Trivial case: single target bit. Just a controlled NOT.
+decompose_addition_single_target = DecompositionRule(
+    gate_class=AdditionGate,
+    gate_recognizer=
+        min_register_sizes(1, 1) &
+        max_register_sizes(float('inf'), 1),
+    gate_decomposer=lambda cmd:
+        X & cmd.control_qubits & cmd.qubits[0][0] | cmd.qubits[1][0])
+
+# Trivial case: single input bit. Controlled increment.
+# Minimum control requirement avoids cyclic decomp w.r.t. increment.
+decompose_addition_single_input = DecompositionRule(
+    gate_class=AdditionGate,
+    gate_recognizer=
+        min_controls(1) &
+        min_register_sizes(1, 1) &
+        max_register_sizes(1, float('inf')),
+    gate_decomposer=lambda cmd:
+        Increment & cmd.control_qubits & cmd.qubits[0] | cmd.qubits[1])
+
+# Additions without controls can be done inline.
+decompose_addition_uncontrolled = DecompositionRule(
+    gate_class=AdditionGate,
+    gate_recognizer=max_controls(0),
+    gate_decomposer=lambda cmd: do_addition_no_controls(
+        input_reg=cmd.qubits[0],
+        target_reg=cmd.qubits[1]))
+
+# When there's workspace, controlled additions of any size are cheap.
+decompose_addition_controlled = DecompositionRule(
+    gate_class=AdditionGate,
+    gate_recognizer=min_workspace(1),
+    gate_decomposer=lambda cmd: do_addition(
+        input_reg=cmd.qubits[0],
+        target_reg=cmd.qubits[1],
+        controls=cmd.control_qubits,
+        dirty=workspace(cmd)[0]))
 
 
 all_defined_decomposition_rules = [
-    # Trivial case: empty input or empty target. Do nothing.
-    DecompositionRule(
-        gate_class=AdditionGate,
-        gate_decomposer=lambda cmd: None,
-        gate_recognizer=lambda cmd:
-            len(cmd.qubits[0]) == 0 or len(cmd.qubits[1]) == 0),
-
-    # Trivial case: single target bit. Just a controlled NOT.
-    DecompositionRule(
-        gate_class=AdditionGate,
-        gate_recognizer=
-            min_register_sizes(1, 1) &
-            max_register_sizes(float('inf'), 1),
-        gate_decomposer=lambda cmd:
-            X & cmd.control_qubits & cmd.qubits[0][0] | cmd.qubits[1][0]),
-
-    # Trivial case: single input bit. Controlled increment.
-    # Minimum control requirement avoids cyclic decomp w.r.t. increment.
-    DecompositionRule(
-        gate_class=AdditionGate,
-        gate_recognizer=
-            min_controls(1) &
-            min_register_sizes(1, 1) &
-            max_register_sizes(1, float('inf')),
-        gate_decomposer=lambda cmd:
-            Increment & cmd.control_qubits & cmd.qubits[0] | cmd.qubits[1]),
-
-    # Additions without controls can be done inline.
-    DecompositionRule(
-        gate_class=AdditionGate,
-        gate_recognizer=max_controls(0),
-        gate_decomposer=lambda cmd: do_addition_no_controls(
-            input_reg=cmd.qubits[0],
-            target_reg=cmd.qubits[1])),
-
-    # When there's workspace, controlled additions of any size are cheap.
-    DecompositionRule(
-        gate_class=AdditionGate,
-        gate_recognizer=min_workspace(1),
-        gate_decomposer=lambda cmd: do_addition(
-            input_reg=cmd.qubits[0],
-            target_reg=cmd.qubits[1],
-            controls=cmd.control_qubits,
-            dirty=workspace(cmd)[0])),
+    decompose_addition_no_op,
+    decompose_addition_single_target,
+    decompose_addition_single_input,
+    decompose_addition_uncontrolled,
+    decompose_addition_controlled,
 ]

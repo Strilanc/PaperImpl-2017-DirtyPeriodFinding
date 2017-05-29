@@ -252,7 +252,7 @@ def fuzz_permutation_circuit(register_sizes,
 def cover(n, cut=10):
     if n < cut:
         return range(n)
-    return random.randint(0, n - 1),
+    return list(range(2)) + [random.randint(2, n - 1) for _ in range(3)]
 
 
 def _inverse_decomposition_rule(gate, rule):
