@@ -421,7 +421,7 @@ In particular, we focus on the case where $G^2 = U$ and $H$ satisfies $H \cdot G
 
 In the case of addition, we have the property $\lnot (\lnot x + K) = \lnot (-x - 1 + K) = -(-x - 1 + K) - 1 = x-K$.
 So a valid inverting operation $H$ for addition is a NOT gate applied to every target wire; $H=X^{\otimes n}$.
-If we then consider $G=\text{S}_{\text{-} K}$, where $S$ is an offset-by-subscript operation, we find that $[G, H] = \text{S}_{2K}$.
+If we then consider $G=\text{S}_{\text{-} K}$, where $S$ is an offset-by-subscript operation, we find that $[G, H] = [\text{S}_{-K}, X^{\otimes n}] = \text{S}_{2K}$.
 We can control this constructed $\text{S}_{2K}$ operation by adding controls only to the multi-not operation $H$, which is cheap to do.
 To add $K$ instead of $2K$, we temporarily prepend a dirty LSB onto the target register.
 We show this construction in figure \ref{fig:controlled-addition}.
@@ -632,7 +632,7 @@ Note that, for classical reversible computation, 1 dirty ancilla is the minimum 
 An increment operation on $n$ bits is equivalent to performing a state-permutation that uses $2^n-1$ swaps to sweep the state $|0\rangle$ from the bottom of the state-space to the top of the state-space one step at a time.
 Note that $2^n-1$ is odd for non-trivial $n$, and therefore the parity of the state permutation performed by an increment operation is odd.
 However, the parity of the permutation performed by any classical gate that doesn't cover the entire circuit is even.
-Since odd-parity permutations can't be implemented by composing even-parity permutations, it is impossible to perform an increment operation, that covers every bit, with constant-sized operations.
+Since odd-parity permutations can't be implemented by composing even-parity permutations, it is impossible to compose smaller operations into an increment operation that covers every bit.
 An uncovered bit (i.e. a dirty ancilla) must be present.
 
 When quantum operations are available, the parity barrier can be bypassed and incrementing can be performed without any ancilla.
@@ -641,7 +641,7 @@ See figure \ref{fig:bootstrap-ancilla} for the construction.
 
 We used \href{https://github.com/Strilanc/Quirk}{Quirk} \cite{quirk2016} to find, explore \cite{victor2013}, check, and refine individual constructions.
 The full construction down to Toffoli gates was tested in \href{https://github.com/ProjectQ-Framework/ProjectQ}{ProjectQ} \cite{projq2016}.
-The source code for the ProjectQ implementation, and an issue tracker for submitting errata, can be found online at \href{https://github.com/Strilanc/PaperImpl-2017-DirtyPeriodFinding}{https://github.com/Strilanc/PaperImpl-2017-DirtyPeriodFinding}.
+The python source code for our test implementation, and an issue tracker for submitting errata, can be found online at \href{https://github.com/Strilanc/PaperImpl-2017-DirtyPeriodFinding}{https://github.com/Strilanc/PaperImpl-2017-DirtyPeriodFinding}.
 
 Although the asymptotic costs of our constructions match previous work, the constant factors are significantly worse.
 For example, our equivalent of a controlled 32-qubit multiplication uses roughly 1.3 million Toffoli gates (the specific number depends on the factor to multiply by, the modulus, whether or not a number of optimizations are used, and whether or not those optimizations apply to a given case).
@@ -653,12 +653,12 @@ These inefficiencies stack multiplicatively when one construction uses another a
 \section{Future Work and Conclusion} \label{sec:conclusion}
 
 Of the $2n+1$ qubits our period-finding construction requires: $1$ is used for the phase estimation qubit, $n$ are used to store the work register, and $n$ are ancillae used to implement modular multiplication in terms of scaled modular addition.
-All the other constructions, for simpler arithmetic, can be done with two or fewer dirty ancillae.
-Furthermore, because scaled modular addition is reduced into operations that have a $\Theta(n)$ surplus of unused qubits, in context there are always more than enough dirty ancillae available to implement the simpler arithmetic inline.
+Except for multiplication, all our arithmetic constructions use two or fewer dirty ancillae.
+Since we reduce modular scale-addition into operations that have a $\Theta(n)$ surplus of unused qubits, in context there are always more than enough dirty ancillae available to implement the simpler arithmetic inline.
 Because there is slack in the simpler arithmetic constructions, improving the overall number of qubits used by Shor's algorithm requires only that we improve the first step of reducing modular multiplication into some other operation.
 
 One way we could reduce modular multiplication into better operations is by knowing the factorization $p \cdot q$ of the modulus $R$, with $p$ and $q$ each having size $\approx n/2$.
-The Chinese remainder theorem guarantees that $x \mod R$ could be uniquely represented as the pair pf half-sized values $(x \mod p, x \mod q)$.
+The Chinese remainder theorem guarantees that $x \mod R$ could be uniquely represented as the pair of half-sized values $(x \mod p, x \mod q)$.
 Multiplications of the half-sized values could use and re-use the same half-sized clean ancilla register, for a total of three half-sized registers (one for $x \mod p$, one for $x \mod q$, and one ancilla register) and a total qubit count of $\approx 1.5n$.
 Despite the large reduction in the number of ancillae available to the underlying arithmetic operations, each operation would still have more than enough ancillae and contribute no additional ancillae to the overall circuit.
 (Note: because the initial value $x_0 = 1$ is trivial, and the final value is measured or discarded, it's not necessary to implement circuits that translate between the Chinese-remainder representation and the usual 2s-complement representation.)
@@ -671,7 +671,7 @@ The constructions also reduce the number of {\em clean} qubits required by $n$.
 
 The number of clean qubits required to perform Shor's algorithm is now $n + O(1)$.
 We consider this improvement to be a step towards a construction for Shor's algorithm that uses only $n + O(1)$ qubits total.
-By allowing keys to fit into quantum computers with half as much space, such a construction could reduce the time until it's possible to break current cryptographic keys by months or years (depending on how quickly quantum computers gain capacity, the constant factors of the construction, and the trade-offs between space, error correction, and qubit coherence time).
+Such a construction could, by allowing factoring problems to fit into quantum computers with half as much space, reduce the time until it's possible to break current cryptographic keys by months or years (depending on how quickly quantum computers gain capacity, the constant factors of the construction, and the trade-offs between space, error correction, and qubit coherence time).
 
 
 \bibliographystyle{plain}
