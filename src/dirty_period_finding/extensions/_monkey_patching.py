@@ -1,3 +1,17 @@
+# -*- coding: utf-8 -*-
+
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
 from __future__ import unicode_literals
 
 import weakref
@@ -178,6 +192,24 @@ def simulator_receive(self, command_list):
             self.send([cmd])
 
 
+original_handle = Simulator._handle
+_x_list = [[0, 1], [1, 0]]
+
+
+def sim_handle(self, cmd):
+    if cmd.gate.__class__ is XGate:
+        target = [cmd._qubits[0][0].id]
+        controls = [qb.id for qb in cmd.control_qubits]
+        self._simulator.apply_controlled_gate(_x_list, target, controls)
+        if not self._gate_fusion:
+            self._simulator.run()
+    elif cmd.gate.__class__ is FlushGate:
+        self._simulator.run()
+    else:
+        original_handle(self, cmd)
+
+
+# Well well well, isn't this a terrifying little block of code.
 Command.__str__ = command_str
 Command.__repr__ = command_str
 Qureg.__str__ = qureg_str
@@ -194,22 +226,4 @@ XGate.__and__ = gate_and
 ZGate.__and__ = gate_and
 XGate.__eq__ = lambda self, other: other.__class__ is XGate
 XGate.__hash__ = lambda self: hash((XGate,))
-
-original_handle = Simulator._handle
-
-
-_x_list = [[0, 1], [1, 0]]
-
-
-def sim_handle(self, cmd):
-    if cmd.gate.__class__ is XGate:
-        target = [cmd._qubits[0][0].id]
-        controls = [qb.id for qb in cmd.control_qubits]
-        self._simulator.apply_controlled_gate(_x_list, target, controls)
-        if not self._gate_fusion:
-            self._simulator.run()
-    elif cmd.gate.__class__ is FlushGate:
-        self._simulator.run()
-    else:
-        original_handle(self, cmd)
 Simulator._handle = sim_handle
