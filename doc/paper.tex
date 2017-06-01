@@ -404,7 +404,7 @@ This is a problem for us, because some of our constructions add constants into r
   \centering
   \includegraphics[width=\linewidth]{assets/inline-adder.png}
   \caption{ Adder for input and target registers of the same size.
-  Requires no ancillae, and uses $O(N)$ gates and depth.
+  Requires no ancillae, and uses $O(n)$ gates and depth.
   Based on \cite{van2004, takahashi2005}.}
   \label{fig:inlineadder}
 \end{figure}
@@ -475,7 +475,7 @@ When $n$ dirty bits are available, $x$ can come from a register defined by those
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{assets/increment-many-dirty.png}
-  \caption{ Subtracting $x$ and $-x-1$ from a register increments it. Requires $O(n)$ depth, size, and $n$ dirty ancillae.}
+  \caption{ Subtracting $x$ and $-x-1$ from a register increments it. Requires $O(n)$ depth and size, and $n$ dirty ancillae.}
   \label{fig:increment-many-dirty}
 \end{figure}
 
