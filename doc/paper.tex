@@ -2,6 +2,7 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage[pdfpagelabels,pdftex,bookmarks,breaklinks]{hyperref}
+\usepackage[all]{hypcap}
 \hypersetup{colorlinks,citecolor=blue,urlcolor=blue,linkcolor=blue}
 
 \title{Factoring with $n+2$ clean qubits and $n-1$ dirty qubits}
@@ -538,7 +539,7 @@ We provide the relevant constructions in \autoref{fig:bit-rotate} and \autoref{f
   \includegraphics[width=\linewidth]{assets/controlled-bit-rotate.png}
   \caption{
     A controlled bit rotation / bit swap is three controlled bit-reverses.
-    Uses no ancillae, $O(n+c)$ gates, and $O(n+c)$ depth.
+    Uses no ancillae, $O(c + n)$ gates, and $O(c + n)$ depth.
   }
   \label{fig:bit-rotate}
 \end{figure}
@@ -598,26 +599,28 @@ See \autoref{fig:multi-not} and \autoref{fig:cnot-reduction}.
       Shor \cite{Shor1999} & 1994 & $\Theta(n M(n))$ & $\Theta(n M(n))$ & $\Theta(n)$ & $\Theta(n)$ \\
       Beckman et al. \cite{beckman1996} & 1996 & $\Theta(n^3)$ & $\Theta(n^3)$ & $5n + 1$ & $5n + 1$ \\
       Veldral et al. \cite{vedral1996} & 1996 & $\Theta(n^3)$ & $\Theta(n^3)$ & $4n + 3$ & $4n + 3$ \\
-      Beauregard \cite{beauregard2003} & 2003 & $\Theta(n^3)$ & $\Theta(n^3 \lg n)$ & $2n+3$ & $2n+3$ \\
-      Takahashi et al. \cite{takahashi2006} & 2006 & $\Theta(n^3)$ & $\Theta(n^3 \lg n)$ & $2n+2$ & $2n+2$ \\
+      Beauregard \cite{beauregard2003} & 2003 & $\Theta(n^3 \lg \frac{1}{\varepsilon})$ & $\Theta(n^3 \lg \frac{n}{\varepsilon} \lg \frac{1}{\varepsilon})$ & $2n+3$ & $2n+3$ \\
+      Takahashi et al. \cite{takahashi2006} & 2006 & $\Theta(n^3 \lg \frac{1}{\varepsilon})$ & $\Theta(n^3 \lg \frac{n}{\varepsilon} \lg \frac{1}{\varepsilon})$ & $2n+2$ & $2n+2$ \\
+      H\"{a}ner et al. \cite{haner2016} & 2016 & $\Theta(n^3)$ & $\Theta(n^3 \lg n)$ & $2n+2$ & $2n+2$ \\
       (ours) & 2017 & $\Theta(n^3)$ & $\Theta(n^3 \lg n)$ & $n+2$ & $2n+1$ \\
     \end{tabular}
   }
   \caption{
     Space-efficient constructions of Shor's algorithm over time.
-    The table only includes papers that improved the number of qubits required to perform the algorithm and gave explicit circuit constructions.
+    The table only includes papers that presented explicit circuit constructions improving the minimum number of qubits required to perform the algorithm, or else improved the time complexity at the minimum known size.
     $M(n)$ is the classical time-complexity of multiplication, which is known to be asymptotically at most $n \cdot (\lg n) \cdot 2^{O(\lg^* n)}$ \cite{furer2007}.
+    $\varepsilon$ is the maximum error when synthesizing the circuit out of a fixed set of universal gates, which is asymptotically relevant for algorithms that use Draper addition \cite{draper2000} (i.e. applying phase gradients in frequency space) instead of Toffoli-based addition/offset constructions.
   }
   \label{fig:table-over-time}
 \end{figure*}
 
 
 Recall that \autoref{fig:dependencies} shows a dependency graph of the constructions discussed in this paper.
-Our asymptotic costs are dominated by performing $O(n)$ modular multiplications, each of which uses $O(n)$ modular additions and offsets, each of which uses $O(n \lg n)$ gates \cite{haner2016} and $O(n)$ depth.
+Our asymptotic costs are dominated by performing $O(n)$ modular multiplications, each of which uses $O(n)$ modular additions and offsets, each of which uses $O(n \lg n)$ constant-sized classical gates \cite{haner2016} and $O(n)$ depth.
 The total cost of the period-finding step in Shor's algorithm, using our construction, is $O(n^3 \lg n)$ gates and $O(n^3)$ depth.
 
 In \autoref{fig:table-over-time} we show how the number of qubits needed for Shor's algorithm has improved over time.
-The previous improvement, from $2n+3$ to $2n+2$, occurred over a decade ago.
+The previous space improvement, from $2n+3$ to $2n+2$, occurred over a decade ago.
 
 Our main improvements over previous arithmetic constructions are 1) the use of pivot-flips for modular addition, 2) the use of bimultiplication for modular multiplication, and 3) the $O(n)$ incrementer requiring only a single dirty ancilla.
 
@@ -634,14 +637,14 @@ Previous published incrementers (not counting an unpublished version of our cons
 Our classical incrementer construction uses $O(n)$ gates and a single dirty ancilla.
 
 Note that, for classical reversible computation, 1 dirty ancilla is the minimum possible for an incrementer.
-An increment operation on $n$ bits is equivalent to performing a state-permutation that uses $2^n-1$ swaps to sweep the state $|0\rangle$ from the bottom of the state-space to the top of the state-space one step at a time.
+An increment operation on $n$ bits is equivalent to performing a state-permutation that uses $2^n-1$ swaps to sweep the state $|2^n-1\rangle$ from the top of the state-space to the bottom of the state-space one step at a time.
 Note that $2^n-1$ is odd for non-trivial $n$, and therefore the parity of the state permutation performed by an increment operation is odd.
 However, the parity of the permutation performed by any classical gate that doesn't cover the entire circuit is even.
 Since odd-parity permutations can't be implemented by composing even-parity permutations, it is impossible to compose smaller operations into an increment operation that covers every bit.
 An uncovered bit (i.e. a dirty ancilla) must be present.
 
 When quantum operations are available, the parity barrier can be bypassed and incrementing can be performed without any ancilla.
-The asymptotic cost is the same, but the constant factors are worse.
+The asymptotic cost is slightly worse due to the cost of synthesizing tiny rotations, and the constant factors hidden by the asymptotic notation are also worse.
 See \autoref{fig:bootstrap-ancilla} for the construction.
 
 We used \href{https://github.com/Strilanc/Quirk}{Quirk} \cite{quirk2016} to explore \cite{victor2013}, check, and refine individual constructions.
@@ -651,7 +654,7 @@ The python source code for our test implementation, and an issue tracker for sub
 Although the asymptotic costs of our constructions match previous work, the constant factors are significantly worse.
 For example, our equivalent of a controlled 32-qubit multiplication uses roughly 1.3 million Toffoli gates (the specific number depends on the factor to multiply by, the modulus, whether or not a number of optimizations are used, and whether or not those optimizations apply to a given case).
 This cost is over an order of magnitude worse than previous work \cite{haner2016}.
-The reason for the increased cost is that using dirty ancillae results in more uncomputation work, in repeating some operations twice and conditionally to do them once unconditionally, and in less efficient constructions in general.
+The reason for the increased cost is that using dirty ancillae results in more uncomputation work, in repeating some operations twice conditionally to do them once unconditionally, and in less efficient constructions in general.
 These inefficiencies stack multiplicatively when one construction uses another as a subroutine.
 
 
