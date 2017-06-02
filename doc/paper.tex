@@ -145,7 +145,7 @@ We measure the work register to recover the fixup factor needed to restore the d
 \autoref{fig:period-finding-solo-phase-qubit-explicit-dirty-register} shows this construction.
 
 Because our modular circuit constructions would have undefined behavior if any register had a value equal to or larger than $R$, we need the ancilla register to contain a value less than $R$.
-We ensure this by requiring that the ancilla register's MSB be $|0\rangle$ (i.e. clean) and that the registers be as small as possible (i.e. have size $n = \lceil \lg_2(R-1) \rceil$, because only values up to $R-1$ need to be stored).
+We ensure this by requiring that the ancilla register's MSB be $|0\rangle$ (i.e. clean) and that the registers be as small as possible (i.e. have size $n = \lceil \lg_2(R) \rceil$).
 
 \begin{figure*}
   \centering
