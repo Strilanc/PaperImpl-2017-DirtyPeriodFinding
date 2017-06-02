@@ -80,7 +80,7 @@ A decrement is a reversed increment, a multiply-add is a reversed multiply-subtr
 
 We do not attempt to define or implement reasonable behavior for modular arithmetic circuits applied to out of range values (ones equal to or larger than the modulus).
 This {\em includes input values}.
-For example, if our modular addition construction ($x \mathrel{{+}{=}} y \pmod{R}$) is applied to a $y \geq R$, then we don't guarantee that $y \mod R$ will be added into $x$ or that the operation will commute with other additions or that anything sensible at all will happen.
+For example, if our modular addition construction ($x \mathrel{{+}{=}} y \pmod{R}$) is applied to a $y \geq R$, then we don't guarantee that $y \mod R$ will be added into $x$, that the operation will commute with other additions, that optimizations won't change the behavior, or that anything sensible at all will happen.
 If the precondition $y < R$ is violated, what occurs is undefined behavior \cite{c11}.
 
 
