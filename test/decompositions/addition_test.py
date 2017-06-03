@@ -256,8 +256,16 @@ def test_diagram_decompose_addition_no_op():
     assert decomposition_to_ascii(
         gate=Add,
         decomposition_rule=decompose_addition_no_op,
-        register_sizes=[3, 0]) == ''
+        register_sizes=[3, 0]) == """
+|0>-
+|0>-
+|0>-
+        """.strip()
     assert decomposition_to_ascii(
         gate=Add,
         decomposition_rule=decompose_addition_no_op,
-        register_sizes=[0, 3]) == ''
+        register_sizes=[0, 3]) == """
+|0>-
+|0>-
+|0>-
+        """.strip()

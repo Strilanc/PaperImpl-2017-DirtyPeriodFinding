@@ -386,7 +386,6 @@ def record_decomposition(gate,
     controls = eng.allocate_qureg(control_size)
     regs = tuple(eng.allocate_qureg(size) for size in register_sizes)
     junk = eng.allocate_qureg(workspace)
-    rec.received_commands = []
     if len(junk):
         JunkGate() | junk
 

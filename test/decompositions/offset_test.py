@@ -98,9 +98,10 @@ def test_diagram_decompose_decrease_size():
         register_sizes=[9])
     print(text_diagram)
     assert text_diagram == """
+|0>-----------
+|0>-----------
+|0>-----------
     .-------.
-|0>-|       |-
-    |       |
 |0>-|       |-
     |       |
 |0>-|       |-
@@ -110,8 +111,10 @@ def test_diagram_decompose_decrease_size():
 |0>-|  +55  |-
     |       |
 |0>-|       |-
+    |       |
+|0>-|       |-
     `-------`
-        """.lstrip('\n').rstrip()
+        """.strip()
 
 
 def test_diagram_decompose_into_range_increments():
