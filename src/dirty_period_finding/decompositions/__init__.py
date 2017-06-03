@@ -29,6 +29,7 @@ import pivot_flip_rules
 import comparison_rules
 import reverse_bits_rules
 import rotate_bits_rules
+from projectq.setups.decompositions import swap2cnot as _swap2cnot
 
 all_defined_decomposition_rules = [
     rule
@@ -48,6 +49,7 @@ all_defined_decomposition_rules = [
         comparison_rules,
         reverse_bits_rules,
         rotate_bits_rules,
+        _swap2cnot,
     ]
     for rule in module.all_defined_decomposition_rules
 ]
