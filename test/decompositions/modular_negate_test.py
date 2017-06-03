@@ -87,8 +87,8 @@ def test_bimultiplication_operation():
 
 
 def test_decompose_modular_negate():
-    for register_size in range(1, 100):
-        for control_size in range(3):
+    for register_size in cover(100, min=1):
+        for control_size in cover(3):
             for h_modulus in cover(1 << register_size):
                 modulus = h_modulus + 1
                 check_permutation_decomposition(

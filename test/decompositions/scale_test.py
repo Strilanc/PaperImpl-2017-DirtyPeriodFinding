@@ -45,6 +45,12 @@ from .._test_util import (
 )
 
 
+def test_scale_operation():
+    assert ScaleGate(3).do_operation((5,), (9,)) == (27,)
+    assert ScaleGate(1, 3).do_operation((5,), (27,)) == (9,)
+    assert ScaleGate(3, 3).do_operation((5,), (27,)) == (27,)
+
+
 def test_toffoli_size_of_scale():
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=[

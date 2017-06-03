@@ -35,7 +35,7 @@ from dirty_period_finding.decompositions import (
     comparison_rules,
 )
 from dirty_period_finding.decompositions.modular_scaled_addition_rules import (
-    decompose_into_doubled_addition
+    decompose_into_shifted_addition
 )
 from dirty_period_finding.extensions import (
     LimitedCapabilityEngine,
@@ -92,7 +92,7 @@ def test_decompose_scaled_modular_addition_into_doubled_addition():
                 for factor in cover(modulus):
 
                     check_permutation_decomposition(
-                        decomposition_rule=decompose_into_doubled_addition,
+                        decomposition_rule=decompose_into_shifted_addition,
                         gate=ModularScaledAdditionGate(factor, modulus),
                         register_sizes=[register_size, register_size],
                         control_size=control_size,
@@ -102,7 +102,7 @@ def test_decompose_scaled_modular_addition_into_doubled_addition():
 def test_diagram_decompose_into_doubled_addition():
     text_diagram = decomposition_to_ascii(
         gate=ModularScaledAdditionGate(7, 13),
-        decomposition_rule=decompose_into_doubled_addition,
+        decomposition_rule=decompose_into_shifted_addition,
         register_sizes=[4, 4],
         control_size=1)
     print(text_diagram)

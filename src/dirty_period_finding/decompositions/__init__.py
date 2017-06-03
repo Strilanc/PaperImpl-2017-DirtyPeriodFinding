@@ -35,6 +35,7 @@ from . import pivot_flip_rules
 from . import reverse_bits_rules
 from . import rotate_bits_rules
 from . import scale_rules
+from . import scaled_addition_rules
 
 all_defined_decomposition_rules = [
     rule
@@ -57,6 +58,7 @@ all_defined_decomposition_rules = [
         reverse_bits_rules,
         rotate_bits_rules,
         scale_rules,
+        scaled_addition_rules,
     ]
     for rule in module.all_defined_decomposition_rules
 ]

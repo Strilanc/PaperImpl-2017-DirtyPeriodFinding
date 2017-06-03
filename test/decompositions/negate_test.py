@@ -45,6 +45,10 @@ from .._test_util import (
 )
 
 
+def test_negate_operation():
+    assert Negate.do_operation((5,), (9,)) == (32 - 9,)
+
+
 def test_toffoli_size_of_negate():
     backend = DummyEngine(save_commands=True)
     eng = MainEngine(backend=backend, engine_list=[
