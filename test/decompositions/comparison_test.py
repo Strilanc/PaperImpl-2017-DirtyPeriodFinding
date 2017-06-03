@@ -67,7 +67,7 @@ def test_predict_overflow_operation():
 
 
 def test_decompose_xor_offset_carry_signals():
-    for register_size in range(1, 50):
+    for register_size in cover(50, min=1):
         for offset in cover(1 << register_size):
 
             check_permutation_decomposition(
@@ -77,8 +77,8 @@ def test_decompose_xor_offset_carry_signals():
 
 
 def test_decompose_overflow():
-    for register_size in range(1, 50):
-        for control_size in range(3):
+    for register_size in cover(50, min=1):
+        for control_size in cover(3):
             for offset in cover(1 << register_size):
 
                 check_permutation_decomposition(
@@ -90,8 +90,8 @@ def test_decompose_overflow():
 
 
 def test_decompose_less_than_into_overflow():
-    for register_size in range(1, 100):
-        for control_size in range(3):
+    for register_size in cover(100, min=1):
+        for control_size in cover(3):
             for limit in cover((1 << register_size) + 1):
 
                 check_permutation_decomposition(
@@ -103,8 +103,8 @@ def test_decompose_less_than_into_overflow():
 
 
 def test_decompose_less_than_low_workspace():
-    for register_size in range(1, 100):
-        for control_size in range(3):
+    for register_size in cover(100, min=1):
+        for control_size in cover(3):
             for limit in cover((1 << register_size) + 1):
 
                 check_permutation_decomposition(

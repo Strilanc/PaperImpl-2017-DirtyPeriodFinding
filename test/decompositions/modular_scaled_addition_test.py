@@ -85,8 +85,8 @@ def test_scaled_modular_addition_operation():
 
 
 def test_decompose_scaled_modular_addition_into_doubled_addition():
-    for register_size in range(1, 50):
-        for control_size in range(3):
+    for register_size in cover(50, min=1):
+        for control_size in cover(3):
             for h_modulus in cover(1 << (register_size - 1)):
                 modulus = h_modulus * 2 + 1
                 for factor in cover(modulus):

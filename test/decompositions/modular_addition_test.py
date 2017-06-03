@@ -117,7 +117,7 @@ def test_toffoli_size_of_modular_offset():
 
 def test_decompose_modular_addition():
     for register_size in cover(100, min=1):
-        for control_size in range(3):
+        for control_size in cover(3):
             for h_modulus in cover((1 << register_size) - 1):
                 modulus = h_modulus + 1
 
@@ -131,7 +131,7 @@ def test_decompose_modular_addition():
 
 def test_decompose_modular_offset():
     for register_size in cover(100, min=1):
-        for control_size in range(3):
+        for control_size in cover(3):
             for h_modulus in cover(1 << register_size):
                 modulus = h_modulus + 1
                 for offset in cover(modulus):

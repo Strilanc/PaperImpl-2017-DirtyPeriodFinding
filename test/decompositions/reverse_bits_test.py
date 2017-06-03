@@ -36,7 +36,8 @@ from dirty_period_finding.extensions import (
 from dirty_period_finding.gates import ReverseBits
 from .._test_util import (
     decomposition_to_ascii,
-    check_permutation_decomposition
+    check_permutation_decomposition,
+    cover,
 )
 
 
@@ -66,8 +67,8 @@ def test_reverse_operation():
 
 
 def test_decompose_into_big_swap():
-    for register_size in range(1, 100):
-        for control_size in range(2, 4):
+    for register_size in cover(100, min=1):
+        for control_size in cover(4, min=2):
 
             check_permutation_decomposition(
                 decomposition_rule=decompose_into_big_swap,
@@ -77,8 +78,8 @@ def test_decompose_into_big_swap():
 
 
 def test_decompose_into_cswaps():
-    for register_size in range(1, 100):
-        for control_size in range(2):
+    for register_size in cover(100, min=1):
+        for control_size in cover(2):
 
             check_permutation_decomposition(
                 decomposition_rule=decompose_into_cswaps,

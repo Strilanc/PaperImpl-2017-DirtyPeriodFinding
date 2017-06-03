@@ -38,7 +38,8 @@ from dirty_period_finding.extensions import (
 from dirty_period_finding.gates import Decrement, Increment
 from .._test_util import (
     check_permutation_decomposition,
-    decomposition_to_ascii
+    decomposition_to_ascii,
+    cover,
 )
 
 
@@ -68,8 +69,8 @@ def test_toffoli_size_of_increment():
 
 
 def test_decompose_increment_into_cnot_triangle():
-    for register_size in range(9):
-        for control_size in range(4):
+    for register_size in cover(9):
+        for control_size in cover(4):
             check_permutation_decomposition(
                 decomposition_rule=decompose_increment_into_cnot_triangle,
                 gate=Increment,
@@ -78,8 +79,8 @@ def test_decompose_increment_into_cnot_triangle():
 
 
 def test_decompose_increment_with_low_workspace():
-    for register_size in range(100):
-        for control_size in range(3):
+    for register_size in cover(100):
+        for control_size in cover(3):
             check_permutation_decomposition(
                 decomposition_rule=decompose_increment_with_low_workspace,
                 gate=Increment,
@@ -89,7 +90,7 @@ def test_decompose_increment_with_low_workspace():
 
 
 def test_decompose_increment_high_workspace():
-    for register_size in range(100):
+    for register_size in cover(100):
         check_permutation_decomposition(
             decomposition_rule=decompose_increment_high_workspace,
             gate=Increment,

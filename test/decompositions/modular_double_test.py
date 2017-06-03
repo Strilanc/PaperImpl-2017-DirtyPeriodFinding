@@ -97,8 +97,8 @@ def test_operation():
 
 
 def test_decompose_modular_double_into_align_and_rotate():
-    for register_size in range(50):
-        for control_size in range(3):
+    for register_size in cover(50):
+        for control_size in cover(3):
             for h_modulus in cover((1 << register_size) // 2):
                 modulus = h_modulus * 2 + 1
 
