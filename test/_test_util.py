@@ -264,7 +264,9 @@ def fuzz_permutation_circuit(register_sizes,
     assert outputs == actual_outputs
 
 
-def cover(n, cut=10):
+def cover(n, cut=10, min=0):
+    if min > 0:
+        return [e + min for e in cover(n - min, cut=cut + min)]
     if n < cut:
         return range(n)
     return list(range(2)) + [random.randint(2, n - 1) for _ in range(3)]

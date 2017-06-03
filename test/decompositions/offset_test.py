@@ -22,6 +22,7 @@ from dirty_period_finding.decompositions.offset_rules import (
     decompose_into_range_increments,
     decompose_into_recursion,
     decompose_remove_controls,
+    decompose_decrease_size,
 )
 from dirty_period_finding.gates import OffsetGate
 from .._test_util import (
@@ -46,7 +47,7 @@ def test_estimate_cost_of_bitrange_offset():
 
 
 def test_decompose_into_range_increments():
-    for register_size in range(100):
+    for register_size in cover(100):
         for offset in cover(1 << register_size):
             if estimate_cost_of_bitrange_offset(offset, register_size) > 4:
                 continue
@@ -57,9 +58,20 @@ def test_decompose_into_range_increments():
                 register_sizes=[register_size])
 
 
-def test_decompose_into_recursion():
-    for register_size in range(100):
+def test_decompose_decrease_size():
+    for register_size in cover(100):
         for offset in cover(1 << register_size):
+            for control_size in cover(2):
+                check_permutation_decomposition(
+                    decomposition_rule=decompose_decrease_size,
+                    gate=OffsetGate(offset * 2),
+                    register_sizes=[register_size],
+                    control_size=control_size)
+
+
+def test_decompose_into_recursion():
+    for register_size in range(1, 10):
+        for offset in cover(1 << (register_size - 1)):
             check_permutation_decomposition(
                 decomposition_rule=decompose_into_recursion,
                 gate=OffsetGate(offset),
@@ -68,7 +80,7 @@ def test_decompose_into_recursion():
 
 
 def test_decompose_remove_controls():
-    for register_size in range(100):
+    for register_size in cover(100):
         for offset in cover(1 << register_size):
             for controls in range(1, 4):
                 check_permutation_decomposition(
@@ -77,6 +89,29 @@ def test_decompose_remove_controls():
                     register_sizes=[register_size],
                     workspace=1,
                     control_size=controls)
+
+
+def test_diagram_decompose_decrease_size():
+    text_diagram = decomposition_to_ascii(
+        gate=OffsetGate(0b110111000),
+        decomposition_rule=decompose_decrease_size,
+        register_sizes=[9])
+    print(text_diagram)
+    assert text_diagram == """
+    .-------.
+|0>-|       |-
+    |       |
+|0>-|       |-
+    |       |
+|0>-|       |-
+    |       |
+|0>-|       |-
+    |       |
+|0>-|  +55  |-
+    |       |
+|0>-|       |-
+    `-------`
+        """.lstrip('\n').rstrip()
 
 
 def test_diagram_decompose_into_range_increments():

@@ -45,3 +45,4 @@ from ._command_predicates import (
 from ._limited_capability_engine import LimitedCapabilityEngine
 from ._permutation_simulator import PermutationSimulator
 from ._to_ascii import commands_to_ascii_circuit
+from ._util import multiplicative_inverse, extended_gcd

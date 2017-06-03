@@ -47,25 +47,23 @@ def test_decompose_multi_not_into_cnots():
 
 
 def test_decompose_halve_cnot_with_single_workspace():
-    for control_size in cover(100):
-        if control_size >= 3:
-            check_permutation_decomposition(
-                decomposition_rule=decompose_halve_cnot_with_single_workspace,
-                gate=X,
-                register_sizes=[1],
-                control_size=control_size,
-                workspace=1)
+    for control_size in cover(100, min=3):
+        check_permutation_decomposition(
+            decomposition_rule=decompose_halve_cnot_with_single_workspace,
+            gate=X,
+            register_sizes=[1],
+            control_size=control_size,
+            workspace=1)
 
 
 def test_decompose_cnot_with_big_workspace():
-    for control_size in cover(100):
-        if control_size >= 3:
-            check_permutation_decomposition(
-                decomposition_rule=decompose_cnot_with_big_workspace,
-                gate=X,
-                register_sizes=[1],
-                control_size=control_size,
-                workspace=max(0, control_size - 2))
+    for control_size in cover(100, min=3):
+        check_permutation_decomposition(
+            decomposition_rule=decompose_cnot_with_big_workspace,
+            gate=X,
+            register_sizes=[1],
+            control_size=control_size,
+            workspace=max(0, control_size - 2))
 
 
 def test_diagram_decompose_multi_not_into_cnots():

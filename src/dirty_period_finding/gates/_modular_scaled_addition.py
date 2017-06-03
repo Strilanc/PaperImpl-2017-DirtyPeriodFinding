@@ -70,15 +70,3 @@ class ModularScaledAdditionGate(BasicMathGateEx):
 
     def ascii_register_labels(self):
         return ['A', '+A·{} % {}'.format(self.factor, self.modulus)]
-
-
-def _extended_gcd(a, b):
-    if a == 0:
-        return b, 0, 1
-    g, y, x = _extended_gcd(b % a, a)
-    return g, x - (b // a) * y, y
-
-
-def _multiplicative_inverse(a, m):
-    g, x, y = _extended_gcd(a, m)
-    return None if g != 1 else x % m

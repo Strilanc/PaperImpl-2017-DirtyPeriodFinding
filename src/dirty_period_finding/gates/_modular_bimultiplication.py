@@ -18,7 +18,10 @@ from __future__ import unicode_literals
 
 from projectq.ops import NotMergeable
 
-from dirty_period_finding.extensions import BasicMathGateEx
+from dirty_period_finding.extensions import (
+    BasicMathGateEx,
+    multiplicative_inverse,
+)
 
 
 class ModularBimultiplicationGate(BasicMathGateEx):
@@ -70,16 +73,3 @@ class ModularBimultiplicationGate(BasicMathGateEx):
             '×{} (mod {})'.format(self.factor, self.modulus),
             '×{} (mod {})'.format(self.inverse_factor, self.modulus)
         ]
-
-
-def extended_gcd(a, b):
-    if a == 0:
-        return b, 0, 1
-    g, y, x = extended_gcd(b % a, a)
-    return g, x - (b // a) * y, y
-
-
-def multiplicative_inverse(a, m):
-    a %= m
-    g, x, y = extended_gcd(a, m)
-    return None if g != 1 else x % m

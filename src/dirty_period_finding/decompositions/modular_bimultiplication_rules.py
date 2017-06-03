@@ -56,6 +56,14 @@ def do_bimultiplication(gate, forward_reg, inverse_reg, controls):
     assert len(inverse_reg) == n
     assert 0 < gate.modulus <= 1 << n
 
+    # Trivial cases.
+    if gate.factor == 1:
+        return
+    if gate.factor == -1:
+        ModularNegate | forward_reg
+        ModularNegate | inverse_reg
+        return
+
     scale_add = ModularScaledAdditionGate(gate.factor, gate.modulus)
     scale_sub = ModularScaledAdditionGate(-gate.inverse_factor, gate.modulus)
 

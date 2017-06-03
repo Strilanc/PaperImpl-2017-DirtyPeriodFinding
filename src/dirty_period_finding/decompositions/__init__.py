@@ -14,26 +14,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import addition_rules
-import bootstrap_ancilla_rules
-import increment_rules
-import modular_addition_rules
-import modular_bimultiplication_rules
-import modular_double_rules
-import modular_negate_rules
-import modular_scaled_addition_rules
-import multi_not_rules
-import offset_rules
-import phase_gradient_rules
-import pivot_flip_rules
-import comparison_rules
-import reverse_bits_rules
-import rotate_bits_rules
+from __future__ import absolute_import
+
 from projectq.setups.decompositions import swap2cnot as _swap2cnot
+
+from . import addition_rules
+from . import bootstrap_ancilla_rules
+from . import comparison_rules
+from . import increment_rules
+from . import modular_addition_rules
+from . import modular_bimultiplication_rules
+from . import modular_double_rules
+from . import modular_negate_rules
+from . import modular_scaled_addition_rules
+from . import multi_not_rules
+from . import negate_rules
+from . import offset_rules
+from . import phase_gradient_rules
+from . import pivot_flip_rules
+from . import reverse_bits_rules
+from . import rotate_bits_rules
+from . import scale_rules
 
 all_defined_decomposition_rules = [
     rule
     for module in [
+        _swap2cnot,
         addition_rules,
         bootstrap_ancilla_rules,
         increment_rules,
@@ -43,13 +49,14 @@ all_defined_decomposition_rules = [
         modular_negate_rules,
         modular_scaled_addition_rules,
         multi_not_rules,
+        negate_rules,
         offset_rules,
         phase_gradient_rules,
         pivot_flip_rules,
         comparison_rules,
         reverse_bits_rules,
         rotate_bits_rules,
-        _swap2cnot,
+        scale_rules,
     ]
     for rule in module.all_defined_decomposition_rules
 ]

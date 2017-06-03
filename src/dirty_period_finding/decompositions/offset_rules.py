@@ -165,6 +165,26 @@ def _better_to_use_bitrange_offset(cmd):
     return c <= 4
 
 
+def do_decrease_size(offset, target_reg, controls):
+    jump = 0
+    while offset & 1 == 0:
+        if not offset:
+            return
+        offset >>= 1
+        jump += 1
+
+    OffsetGate(offset) & controls | target_reg[jump:]
+
+
+decompose_decrease_size = DecompositionRule(
+    gate_class=OffsetGate,
+    gate_recognizer=lambda cmd: cmd.gate.offset & 1 == 0,
+    gate_decomposer=lambda cmd: do_decrease_size(
+        offset=cmd.gate.offset,
+        target_reg=cmd.qubits[0],
+        controls=cmd.control_qubits))
+
+
 decompose_remove_controls = DecompositionRule(
     gate_class=OffsetGate,
     gate_recognizer=min_controls(1) & min_workspace(1),
@@ -192,6 +212,8 @@ decompose_into_recursion = DecompositionRule(
 
 
 all_defined_decomposition_rules = [
+    # Even offsets can be reduced to smaller odd offsets.
+    decompose_decrease_size,
     # Separate the controlling from the offsetting.
     decompose_remove_controls,
     # For simple offsets, just use increments and decrements.

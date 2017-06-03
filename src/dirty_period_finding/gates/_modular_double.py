@@ -16,8 +16,10 @@
 
 from __future__ import unicode_literals
 
-from ._modular_bimultiplication import multiplicative_inverse
-from dirty_period_finding.extensions import BasicMathGateEx
+from dirty_period_finding.extensions import (
+    BasicMathGateEx,
+    multiplicative_inverse,
+)
 
 
 class ModularDoubleGate(BasicMathGateEx):

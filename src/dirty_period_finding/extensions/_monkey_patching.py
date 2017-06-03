@@ -229,3 +229,4 @@ ZGate.__and__ = gate_and
 XGate.__eq__ = lambda self, other: other.__class__ is XGate
 XGate.__hash__ = lambda self: hash((XGate,))
 Simulator._handle = sim_handle
+XGate.get_math_function = lambda self, _: lambda x: (x[0] ^ 1,)
