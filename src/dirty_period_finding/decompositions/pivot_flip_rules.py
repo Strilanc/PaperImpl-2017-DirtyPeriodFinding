@@ -67,6 +67,10 @@ def do_const_pivot_flip(gate, target_reg, controls, dirty_qubit):
         dirty_qubit (Qubit):
             Workspace.
     """
+    # Trivial case: no-op.
+    if gate.pivot <= 1:
+        return
+
     for _ in range(2):
         # Compare.
         LessThanConstantGate(gate.pivot) | (target_reg, dirty_qubit)

@@ -29,13 +29,11 @@ from dirty_period_finding.decompositions import (
     addition_rules,
     increment_rules,
     multi_not_rules,
-    modular_double_rules,
-    rotate_bits_rules,
-    reverse_bits_rules,
     comparison_rules,
 )
 from dirty_period_finding.decompositions.modular_scaled_addition_rules import (
-    decompose_into_shifted_addition
+    decompose_into_shifted_addition,
+    decompose_into_doubled_addition,
 )
 from dirty_period_finding.extensions import (
     LimitedCapabilityEngine,
@@ -49,22 +47,24 @@ from .._test_util import (
 )
 
 
+def test_scaled_modular_addition_operation():
+    assert ModularScaledAdditionGate(3, 11).do_operation(5, 9) == (5, 2)
+    assert ModularScaledAdditionGate(-2, 11).do_operation(5, 9) == (5, 10)
+
+
 def test_toffoli_size_of_scaled_modular_addition():
     rec = DummyEngine(save_commands=True)
     eng = MainEngine(backend=rec, engine_list=[
         AutoReplacerEx(DecompositionRuleSet(modules=[
-            modular_scaled_addition_rules,
-            modular_double_rules,
-            rotate_bits_rules,
-            reverse_bits_rules,
-            pivot_flip_rules,
-            offset_rules,
             addition_rules,
-            swap2cnot,
-            increment_rules,
-            multi_not_rules,
-            modular_addition_rules,
             comparison_rules,
+            increment_rules,
+            modular_addition_rules,
+            modular_scaled_addition_rules,
+            multi_not_rules,
+            offset_rules,
+            pivot_flip_rules,
+            swap2cnot,
         ])),
         LimitedCapabilityEngine(allow_toffoli=True),
     ])
@@ -79,12 +79,7 @@ def test_toffoli_size_of_scaled_modular_addition():
     assert 20000 < len(rec.received_commands) < 40000
 
 
-def test_scaled_modular_addition_operation():
-    assert ModularScaledAdditionGate(3, 11).do_operation(5, 9) == (5, 2)
-    assert ModularScaledAdditionGate(-2, 11).do_operation(5, 9) == (5, 10)
-
-
-def test_decompose_scaled_modular_addition_into_doubled_addition():
+def test_decompose_into_shifted_addition():
     for register_size in cover(50, min=1):
         for control_size in cover(3):
             for h_modulus in cover(1 << (register_size - 1)):
@@ -99,7 +94,22 @@ def test_decompose_scaled_modular_addition_into_doubled_addition():
                         register_limits=[modulus, modulus])
 
 
-def test_diagram_decompose_into_doubled_addition():
+def test_decompose_into_doubled_addition():
+    for register_size in cover(50, min=1):
+        for control_size in cover(3):
+            for h_modulus in cover(1 << (register_size - 1)):
+                modulus = h_modulus * 2 + 1
+                for factor in cover(modulus):
+
+                    check_permutation_decomposition(
+                        decomposition_rule=decompose_into_doubled_addition,
+                        gate=ModularScaledAdditionGate(factor, modulus),
+                        register_sizes=[register_size, register_size],
+                        control_size=control_size,
+                        register_limits=[modulus, modulus])
+
+
+def test_diagram_decompose_into_shifted_addition():
     text_diagram = decomposition_to_ascii(
         gate=ModularScaledAdditionGate(7, 13),
         decomposition_rule=decompose_into_shifted_addition,
@@ -125,4 +135,33 @@ def test_diagram_decompose_into_doubled_addition():
     |           | |           | |           | |           |
 |0>-|           |-|           |-|           |-|           |-
     `-----------` `-----------` `-----------` `-----------`
+    """.strip()
+
+
+def test_diagram_decompose_into_doubled_addition():
+    text_diagram = decomposition_to_ascii(
+        gate=ModularScaledAdditionGate(7, 13),
+        decomposition_rule=decompose_into_doubled_addition,
+        register_sizes=[4, 4],
+        control_size=1)
+    print(text_diagram)
+    assert text_diagram == """
+|0>-------------------------------------------------@---------------------------@---------------------------@---------------------------@-------
+                                                    |                           |                           |                           |
+|0>-------------------------------------------------|---------------------------|---------------------------|---------------------------@-------
+                                                    |                           |                           |                           |
+|0>-------------------------------------------------|---------------------------|---------------------------@---------------------------|-------
+                                                    |                           |                           |                           |
+|0>-------------------------------------------------|---------------------------@---------------------------|---------------------------|-------
+                                                    |                           |                           |                           |
+|0>-------------------------------------------------@---------------------------|---------------------------|---------------------------|-------
+    .-----------. .-----------. .-----------. .-----|-----. .-----------. .-----|-----. .-----------. .-----|-----. .-----------. .-----|-----.
+|0>-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-
+    |           | |           | |           | |           | |           | |           | |           | |           | |           | |           |
+|0>-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-
+    |           | |           | |           | |           | |           | |           | |           | |           | |           | |           |
+|0>-|  /2 % 13  |-|  /2 % 13  |-|  /2 % 13  |-|  +7 % 13  |-|  *2 % 13  |-|  +7 % 13  |-|  *2 % 13  |-|  +7 % 13  |-|  *2 % 13  |-|  +7 % 13  |-
+    |           | |           | |           | |           | |           | |           | |           | |           | |           | |           |
+|0>-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-|           |-
+    `-----------` `-----------` `-----------` `-----------` `-----------` `-----------` `-----------` `-----------` `-----------` `-----------`
     """.strip()

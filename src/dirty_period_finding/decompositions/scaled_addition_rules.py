@@ -21,7 +21,7 @@ from projectq.cengines import DecompositionRule
 from dirty_period_finding.gates import ScaledAdditionGate, OffsetGate
 
 
-def do_scaled_addition(gate, input_reg, target_reg, controls):
+def do_scaled_addition_via_shifted_adds(gate, input_reg, target_reg, controls):
     """
     Reversibly adds one register, times a constant, into another of the same
     size, modulo a constant.
@@ -63,7 +63,7 @@ def do_scaled_addition(gate, input_reg, target_reg, controls):
 
 decompose_into_shifted_addition = DecompositionRule(
     gate_class=ScaledAdditionGate,
-    gate_decomposer=lambda cmd: do_scaled_addition(
+    gate_decomposer=lambda cmd: do_scaled_addition_via_shifted_adds(
         cmd.gate,
         input_reg=cmd.qubits[0],
         target_reg=cmd.qubits[1],
