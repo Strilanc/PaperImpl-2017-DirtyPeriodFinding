@@ -42,7 +42,7 @@ def do_scaled_addition(gate, input_reg, target_reg, controls):
        ───┤     ├  =  ──────┼─────┼────────●───────
           └──┬──┘           │     │        │
         n ┌──┴──┐      n ┌──┴─┐   │  ┌─────┴─────┐
-       ━/━┥+AK%R┝     ━/━┥+K%R┝━ ... ┥+K2^(n-1)%R┝━
+       ━/━┥ +AK ┝     ━/━┥ +K ┝━ ... ┥ +K<<(n-1) ┝━
           └─────┘        └────┘      └───────────┘
     Args:
         gate (ScaledAdditionGate):

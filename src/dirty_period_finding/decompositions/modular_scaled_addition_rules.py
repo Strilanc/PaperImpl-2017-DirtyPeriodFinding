@@ -47,7 +47,7 @@ def do_modular_scaled_addition(gate, input_reg, target_reg, controls):
        ───┤     ├  =  ──────┼─────┼────────●───────
           └──┬──┘           │     │        │
         n ┌──┴──┐      n ┌──┴─┐   │  ┌─────┴─────┐
-       ━/━┥ +AK ┝     ━/━┥ +K ┝━ ... ┥ +K2^(n-1) ┝━
+       ━/━┥+AK%R┝     ━/━┥+K%R┝━ ... ┥+K<<(n-1)%R┝━
           └─────┘        └────┘      └───────────┘
     Args:
         gate (ModularScaledAdditionGate):
