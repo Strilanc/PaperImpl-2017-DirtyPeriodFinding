@@ -5,7 +5,7 @@ digraph G {
   
   PeriodFinding [label="Modular Exponentation\nfig 2, 3, 4"]
   ModularPairedMultiply [label="Modular Bimultiply\n×K, ×K⁻¹ (mod R)\nfig 5"]
-  ModularMultiplyAccumulate [label="Modular Scale-Accumulate\n+AK (mod R)\nfig 6"]
+  ModularMultiplyAccumulate [label="Modular Scale-Add\n+AK (mod R)\nfig 6"]
   ModularDouble [label="Modular Double\n×2 (mod R)\nfig 7"]
   PivotFlip [label="PivotFlip\nfig 8, 9"]
   ModularAdd [label="Modular Add / Offset\n+A (mod R)\n+K (mod R)\nfig 10, 11, 12"]

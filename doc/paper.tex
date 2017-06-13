@@ -83,6 +83,10 @@ This {\em includes input values}.
 For example, if our modular addition construction ($x \mathrel{{+}{=}} y \pmod{R}$) is applied to a $y \geq R$, then we don't guarantee that $y \mod R$ will be added into $x$, that the operation will commute with other additions, that optimizations won't change the behavior, or that anything sensible at all will happen.
 If the precondition $y < R$ is violated, what occurs is undefined behavior \cite{c11}.
 
+Our circuit constructions are not optimized to achieve good constant factors on circuit depth or gate count.
+Our constructions also ignore machine architecture; they assume all-to-all connectivity between qubits.
+Achieving small constant factors under realistic architectural constraints is an important practical problem, but not the focus of this paper.
+
 
 \section{Constructions} \label{sec:construct}
 
@@ -660,7 +664,12 @@ These inefficiencies stack multiplicatively when one construction uses another a
 
 \section{Future Work and Conclusion} \label{sec:conclusion}
 
-Of the $2n+1$ qubits our period-finding construction requires: $1$ is used for the phase estimation qubit, $n$ are used to store the work register, and $n$ are ancillae used to implement modular multiplication in terms of scaled modular addition.
+In this paper we described how to perform various arithmetic operations using only dirty ancilla.
+We also described various techniques we used to find the constructions: pivot flipping, toggle controlling, commutator controlling, and exploration by directly manipulating circuit diagrams.
+We showed how these constructions reduce the smallest known number of qubits required to perform Shor's algorithm from $2n+2$ to $2n+1$.
+The constructions also reduce the number of {\em clean} qubits required by $n$.
+
+Of the $2n+1$ qubits our period-finding construction requires, $1$ is used for the phase estimation qubit, $n$ are used to store the work register, and $n$ are ancillae used to implement modular multiplication in terms of scaled modular addition.
 Except for multiplication, all our arithmetic constructions use two or fewer dirty ancillae.
 Since we reduce modular scale-addition into operations that have a $\Theta(n)$ surplus of unused qubits, in context there are always more than enough dirty ancillae available to implement the simpler arithmetic inline.
 Because there is slack in the simpler arithmetic constructions, improving the overall number of qubits used by Shor's algorithm requires only that we improve the first step of reducing modular multiplication into some other operation.
@@ -672,12 +681,14 @@ Despite the large reduction in the number of ancillae available to the underlyin
 (Note: because the initial value $x_0 = 1$ is trivial, and the final value is measured or discarded, it's not necessary to implement circuits that translate between the Chinese-remainder representation and the usual 2s-complement representation.)
 Of course, since we use Shor's algorithm to compute the factorization of $R$, using the factorization of $R$ to optimize Shor's algorithm would be paradoxical.
 
-In this paper we described how to perform various arithmetic operations using only dirty ancilla.
-We also described various techniques we used to find the constructions: pivot flipping, toggle controlling, commutator controlling, and exploration by directly manipulating circuit diagrams.
-We showed how these constructions reduce the smallest known number of qubits required to perform Shor's algorithm from $2n+2$ to $2n+1$.
-The constructions also reduce the number of {\em clean} qubits required by $n$.
+A second way to reduce modular multiplication into (slightly) smaller operations could be with commutator control.
+Note that the modular Fourier transform inverts the effect of modular multiplication: $QFT_{R} \cdot (\times K) \cdot QFT_R^{-1} = (\times K^{-1}) \pmod{R}$.
+This has two useful high-level effects.
+First, by applying the bimultiplication gate used in this paper twice, but inverting the effect on the ancilla register for the second application, we can build a proper modular multiplication gate that only affects a single register.
+Second, we can use commutator control to move controls from the modular multiplication gate onto modular Fourier transform gates.
+Assuming controlled modular QFTs can be performed with fewer ancillae than controlled modular multiplication, we could save a dirty ancilla when performing the modular multiplication by borrowing the control qubit.
 
-The number of clean qubits required to perform Shor's algorithm is now $n + O(1)$.
+Possible future improvements aside, in this paper we showed that a number of clean qubits sufficient to perform Shor's algorithm is $n + O(1)$.
 We consider this improvement to be a step towards a construction for Shor's algorithm that uses only $n + O(1)$ qubits total.
 Such a construction could, by allowing factoring problems to fit into quantum computers with half as much space, reduce the time until it's possible to break current cryptographic keys by months or years (depending on how quickly quantum computers gain capacity, the constant factors of the construction, and the trade-offs between space, error correction, and qubit coherence time).
 
