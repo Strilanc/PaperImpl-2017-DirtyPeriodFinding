@@ -682,11 +682,11 @@ Despite the large reduction in the number of ancillae available to the underlyin
 Of course, since we use Shor's algorithm to compute the factorization of $R$, using the factorization of $R$ to optimize Shor's algorithm would be paradoxical.
 
 A second way to reduce modular multiplication into (slightly) smaller operations could be with commutator control.
-Note that the modular Fourier transform inverts the effect of modular multiplication: $QFT_{R} \cdot (\times K) \cdot QFT_R^{-1} = (\times K^{-1}) \pmod{R}$.
+Note that the modular Fourier transform inverts the effect of modular multiplication: $QFT_{R} \cdot (\times K \,\text{mod}\, R) \cdot QFT_R^{-1} = (\times K^{-1} \,\text{mod}\, R)$.
 This has two useful high-level effects.
 First, by applying the bimultiplication gate used in this paper twice, but inverting the effect on the ancilla register for the second application, we can build a proper modular multiplication gate that only affects a single register.
 Second, we can use commutator control to move controls from the modular multiplication gate onto modular Fourier transform gates.
-Assuming controlled modular QFTs can be performed with fewer ancillae than controlled modular multiplication, we could save a dirty ancilla when performing the modular multiplication by borrowing the control qubit.
+Assuming controlled modular QFTs can be performed with fewer ancillae than controlled modular multiplication, we could save a qubit when performing the modular multiplication by borrowing the control qubit.
 
 Possible future improvements aside, in this paper we showed that a number of clean qubits sufficient to perform Shor's algorithm is $n + O(1)$.
 We consider this improvement to be a step towards a construction for Shor's algorithm that uses only $n + O(1)$ qubits total.
