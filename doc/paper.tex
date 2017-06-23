@@ -16,7 +16,7 @@
 \maketitle
 
 \begin{abstract}
-We present reversible classical circuits for performing various arithmetic operations aided by dirty ancillae in an unknown state that must be preserved.
+We present reversible classical circuits for performing various arithmetic operations aided by dirty ancillae (i.e. qubits in an unknown state that must be preserved).
 We improve the number of clean qubits needed to factor an $n$-bit number with Shor's algorithm \cite{Shor1999} from $2n+2$ \cite{takahashi2006, haner2016} to $n+2$, and the total number of qubits needed from $2n+2$ to $2n+1$, without increasing the asymptotic size or depth of the circuit.
 \end{abstract}
 
@@ -31,7 +31,10 @@ One part of a circuit can borrow dirty bits from another part of the same circui
 When attempting to reduce the number of bits or qubits required by a circuit, replacing constructions that use clean ancillae with ones that use dirty ancillae is a useful intermediate goal.
 
 In this paper, we reduce the number of clean qubits required to factor an $n$-bit number with Shor's algorithm from $2n+2$ clean qubits \cite{takahashi2006, haner2016} to $n+2$ clean qubits assisted by $n-1$ dirty qubits.
-We do so without increasing the asymptotic costs, though the constant factors of our constructions are worse.
+We do so without increasing the asymptotic costs.
+However, our circuit constructions are not optimized to achieve good constant factors on circuit depth or gate count.
+Our constructions also ignore machine architecture; they assume all-to-all connectivity between qubits.
+Achieving low T gate counts under realistic architectural constraints is an important practical problem, but not the focus of this paper.
 
 Our paper is structured as follows.
 \autoref{sec:introduction} introduces and describes the conventions our circuit constructions and circuit diagrams will follow.
@@ -82,10 +85,6 @@ We do not attempt to define or implement reasonable behavior for modular arithme
 This {\em includes input values}.
 For example, if our modular addition construction ($x \mathrel{{+}{=}} y \pmod{R}$) is applied to a $y \geq R$, then we don't guarantee that $y \mod R$ will be added into $x$, that the operation will commute with other additions, that optimizations won't change the behavior, or that anything sensible at all will happen.
 If the precondition $y < R$ is violated, what occurs is undefined behavior \cite{c11}.
-
-Our circuit constructions are not optimized to achieve good constant factors on circuit depth or gate count.
-Our constructions also ignore machine architecture; they assume all-to-all connectivity between qubits.
-Achieving small constant factors under realistic architectural constraints is an important practical problem, but not the focus of this paper.
 
 
 \section{Constructions} \label{sec:construct}
@@ -688,14 +687,16 @@ First, by applying the bimultiplication gate used in this paper twice, but inver
 Second, we can use commutator control to move controls from the modular multiplication gate onto modular Fourier transform gates.
 Assuming controlled modular QFTs can be performed with fewer ancillae than controlled modular multiplication, we could save a qubit when performing the modular multiplication by borrowing the control qubit.
 
-Possible future improvements aside, in this paper we showed that a number of clean qubits sufficient to perform Shor's algorithm is $n + O(1)$.
-We consider this improvement to be a step towards a construction for Shor's algorithm that uses only $n + O(1)$ qubits total.
-Such a construction could, by allowing factoring problems to fit into quantum computers with half as much space, reduce the time until it's possible to break current cryptographic keys by months or years (depending on how quickly quantum computers gain capacity, the constant factors of the construction, and the trade-offs between space, error correction, and qubit coherence time).
+Possible future improvements aside, in this paper we showed that the number of clean qubits sufficient to perform Shor's algorithm is no more than $n + O(1)$.
+We consider this to be a step towards a construction for Shor's algorithm that uses only $n + O(1)$ qubits total.
+We do note, however, that these improvements are of more theoretical than practical interest.
+In practice, on error corrected quantum computers, the important cost to optimize is the number of T gates.
+In that sense, the main {\em practical} contribution of this paper is the improved increment circuit.
 
 
 \section{Acknowledgements}
 
-We thank Matthew Neeley and Dave Bacon for comments on earlier versions of this paper, from which it greatly benefited.
+We thank Matthew Neeley, Dave Bacon, and Austin Fowler for comments on earlier versions of this paper, from which it greatly benefited.
 
 
 \bibliographystyle{plain}
