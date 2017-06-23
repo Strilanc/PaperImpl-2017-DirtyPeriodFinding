@@ -16,7 +16,7 @@
 \maketitle
 
 \begin{abstract}
-We present reversible classical circuits for performing various arithmetic operations aided by dirty ancillae (i.e. qubits in an unknown state that must be preserved).
+We present reversible classical circuits for performing various arithmetic operations aided by dirty ancillae (i.e. extra qubits in an unknown state that must be restored before the circuit ends).
 We improve the number of clean qubits needed to factor an $n$-bit number with Shor's algorithm \cite{Shor1999} from $2n+2$ \cite{takahashi2006, haner2016} to $n+2$, and the total number of qubits needed from $2n+2$ to $2n+1$, without increasing the asymptotic size or depth of the circuit.
 \end{abstract}
 
@@ -24,7 +24,7 @@ We improve the number of clean qubits needed to factor an $n$-bit number with Sh
 
 When constructing quantum circuits, or classical reversible circuits, an important resource is the number of available ancillae.
 An ancilla is an extra bit or qubit that is available for use by a circuit as temporary workspace.
-Ancillae may be initialized to a known state (``clean bit"), or be given to the circuit in an unknown state (``dirty bit") that must be restored before the circuit finishes.
+Ancillae may be initialized to a known computational basis state (``clean bit"), or be given to the circuit in an unknown and potentially entangled state that must be restored before the circuit finishes (``dirty bit").
 Clean bits are more valuable, allowing for simpler and more compact circuit constructions, but dirty bits are more plentiful, since any temporarily unused bit is a borrowable dirty bit.
 
 One part of a circuit can borrow dirty bits from another part of the same circuit, so circuit constructions that require only dirty bits are easier to apply under tight space constraints, or on circuit topologies where other ancillae are too far away to be acquired quickly.
