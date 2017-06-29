@@ -21,9 +21,13 @@ These instructions explain how to produce a pdf from the latex source, on a fres
 0. Produce `paper.pdf`.
 
     `cd PaperImpl-2017-DirtyPeriodFinding/doc`
+
     `pdflatex paper`
+
     `bibtex paper`
+
     `pdflatex paper`
+
     `pdflatex paper`
 
 0. View the output.

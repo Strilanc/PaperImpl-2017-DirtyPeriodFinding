@@ -88,6 +88,6 @@ These instructions explain the steps involved in getting the code from this repo
 
     `python src/factor.py 55`
 
-    `python src/gate_count.py`
+    `python src/count_gates.py`
 
 0. Edit away
