@@ -4,16 +4,6 @@ This repository contains code for generating and validating the
 constructions from my [work in progress]
 "Factoring with n+2 clean qubits and n-1 dirty qubits".
 
-# Build Instructions
-
-[Work in Progress]
-
-0. Have git and pip installed.
-1. Clone the repository.
-2. pip install projectq
-3. `pytest`
-4. [fiddle with python path?]
-5. `cd src`, `python dirty_period_finding/find_period.py`
 
 # Table of Circuit Constructions
 
@@ -65,3 +55,39 @@ constructions from my [work in progress]
 [quirk-controlled-add]: http://algassert.com/quirk.html#circuit=%7B%22cols%22%3A%5B%5B1%2C1%2C1%2C1%2C%22~fr5t%22%2C%22~m000%22%5D%2C%5B%22Counting11%22%5D%2C%5B%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%5D%2C%5B%22QFT8%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C%22QFT6%22%5D%2C%5B%22Chance11%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C1%2C%22%3C%3C5%22%5D%2C%5B1%2C%22inputA5%22%2C1%2C1%2C1%2C1%2C%22%2B%3DA5%22%5D%2C%5B%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B1%2C%22inputA5%22%2C1%2C1%2C1%2C1%2C%22-%3DA5%22%5D%2C%5B%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C1%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%2C%22X%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C1%2C%22%3E%3E5%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%2C1%2C1%2C1%2C%22~bg74%22%2C%22~3egi%22%2C%22~vei%22%5D%2C%5B%22%E2%80%A2%22%2C%22inputA5%22%2C1%2C1%2C1%2C1%2C%22-%3DA4%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C%22QFT%E2%80%A06%22%5D%2C%5B%22QFT%E2%80%A08%22%5D%2C%5B%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%5D%2C%5B%22Uncounting11%22%5D%2C%5B1%2C1%2C1%2C1%2C%22~9re4%22%2C%22~fr5l%22%2C%22~3egi%22%5D%5D%2C%22gates%22%3A%5B%7B%22id%22%3A%22~9re4%22%2C%22name%22%3A%22Off%22%2C%22matrix%22%3A%22%7B%7B1%2C0%7D%2C%7B0%2C1%7D%7D%22%7D%2C%7B%22id%22%3A%22~fr5l%22%2C%22name%22%3A%22Means%22%2C%22matrix%22%3A%22%7B%7B1%2C0%7D%2C%7B0%2C1%7D%7D%22%7D%2C%7B%22id%22%3A%22~3egi%22%2C%22name%22%3A%22Correct%22%2C%22matrix%22%3A%22%7B%7B1%2C0%7D%2C%7B0%2C1%7D%7D%22%7D%2C%7B%22id%22%3A%22~bg74%22%2C%22name%22%3A%22Known%22%2C%22matrix%22%3A%22%7B%7B1%2C0%7D%2C%7B0%2C1%7D%7D%22%7D%2C%7B%22id%22%3A%22~vei%22%2C%22name%22%3A%22Inverse%22%2C%22matrix%22%3A%22%7B%7B1%2C0%7D%2C%7B0%2C1%7D%7D%22%7D%2C%7B%22id%22%3A%22~fr5t%22%2C%22name%22%3A%22Test%22%2C%22matrix%22%3A%22%7B%7B1%2C0%7D%2C%7B0%2C1%7D%7D%22%7D%2C%7B%22id%22%3A%22~m000%22%2C%22name%22%3A%22Vecs%22%2C%22matrix%22%3A%22%7B%7B1%2C0%7D%2C%7B0%2C1%7D%7D%22%7D%5D%7D
 [quirk-big-add]: http://algassert.com/quirk.html#circuit=%7B%22cols%22%3A%5B%5B%22Counting13%22%5D%2C%5B%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%2C%22Y%5Et%22%5D%2C%5B%22QFT7%22%5D%2C%5B1%2C1%2C1%2C%22QFT10%22%5D%2C%5B%22Chance13%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C%22dec8%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22inc4%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C%22X%22%5D%2C%5B%22Swap%22%2C1%2C1%2C1%2C%22Swap%22%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C%22X%22%5D%2C%5B1%2C%22Swap%22%2C1%2C1%2C%22Swap%22%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C%22X%22%5D%2C%5B1%2C1%2C%22Swap%22%2C1%2C%22Swap%22%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C1%2C1%2C%22Swap%22%2C%22Swap%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22inc4%22%5D%2C%5B1%2C1%2C1%2C%22Swap%22%2C%22Swap%22%2C1%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C1%2C%22Swap%22%2C1%2C%22Swap%22%2C1%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B1%2C%22Swap%22%2C1%2C1%2C%22Swap%22%2C1%2C%22%E2%80%A2%22%5D%2C%5B1%2C%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B%22Swap%22%2C1%2C1%2C1%2C%22Swap%22%2C%22%E2%80%A2%22%5D%2C%5B%22%E2%80%A2%22%2C1%2C1%2C1%2C1%2C%22X%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22%E2%80%A6%22%5D%2C%5B%22inputA5%22%2C1%2C1%2C1%2C1%2C%22-%3DA8%22%5D%2C%5B1%2C1%2C1%2C%22QFT%E2%80%A010%22%5D%2C%5B%22QFT%E2%80%A07%22%5D%2C%5B%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%2C%22Y%5E-t%22%5D%2C%5B%22Uncounting13%22%5D%5D%7D
 [quirk-period-find]: http://algassert.com/quirk#circuit=%7B%22cols%22%3A%5B%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22~mdaf%22%2C1%2C1%2C1%2C%22~h1nm%22%5D%2C%5B1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%7B%22id%22%3A%22setR%22%2C%22arg%22%3A55%7D%2C1%2C1%2C1%2C%7B%22id%22%3A%22setB%22%2C%22arg%22%3A26%7D%5D%2C%5B%5D%2C%5B%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%2C%22H%22%2C%22X%22%5D%2C%5B%22inputA10%22%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22*BToAmodR6%22%5D%2C%5B%22QFT%E2%80%A010%22%5D%2C%5B%22Chance10%22%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C1%2C%22Chance6%22%5D%5D%2C%22gates%22%3A%5B%7B%22id%22%3A%22~h1nm%22%2C%22name%22%3A%22guess%3A%22%2C%22matrix%22%3A%22%7B%7B1%2C0%2C0%2C0%7D%2C%7B0%2C1%2C0%2C0%7D%2C%7B0%2C0%2C1%2C0%7D%2C%7B0%2C0%2C0%2C1%7D%7D%22%7D%2C%7B%22id%22%3A%22~mdaf%22%2C%22name%22%3A%22input%3A%22%2C%22matrix%22%3A%22%7B%7B1%2C0%2C0%2C0%7D%2C%7B0%2C1%2C0%2C0%7D%2C%7B0%2C0%2C1%2C0%7D%2C%7B0%2C0%2C0%2C1%7D%7D%22%7D%5D%7D
+
+
+# Development Environment
+
+These instructions explain the steps involved in getting the code from this repository to run on an Ubuntu machine. The example commands have been tested and confirmed to work on Ubuntu 16.10 booted from a live CD.
+
+
+0. Have [git](https://git-scm.com/) and [pip](https://pypi.python.org/pypi/pip) installed.
+
+    `sudo add-apt-repository universe`
+
+    `sudo apt-get update`
+
+    `sudo apt-get install --yes git python-pip`
+
+0. Clone this repository.
+
+    `git clone https://github.com/Strilanc/PaperImpl-2017-DirtyPeriodFinding.git`
+
+0. Install python dependencies.
+
+    `sudo -H pip install pybind11`
+
+    `sudo -H pip install projectq==0.3.1`
+
+0. *(Optional)* Run tests and example code.
+
+    `cd PaperImpl-2017-DirtyPeriodFinding`
+
+    `pytest`
+
+    `python src/factor.py 55`
+
+    `python src/gate_count.py`
+
+0. Edit away
