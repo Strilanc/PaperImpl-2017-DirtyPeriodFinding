@@ -16,7 +16,7 @@
 \maketitle
 
 \begin{abstract}
-We present reversible classical circuits for performing various arithmetic operations aided by dirty ancillae (i.e. extra qubits in an unknown state that must be restored before the circuit ends).
+We present reversible classical circuits for performing various arithmetic operations aided by dirty ancillae (i.e. extra bits/qubits in an unknown state that must be restored before the circuit ends).
 We improve the number of clean qubits needed to factor an $n$-bit number with Shor's algorithm \cite{Shor1999} from $2n+2$ \cite{takahashi2006, haner2016} to $n+2$, and the total number of qubits needed from $2n+2$ to $2n+1$, without increasing the asymptotic size or depth of the circuit.
 \end{abstract}
 
@@ -586,7 +586,8 @@ See \autoref{fig:multi-not} and \autoref{fig:cnot-reduction}.
   \centering
   \includegraphics[width=\linewidth]{assets/cnot-reduction.png}
   \caption{
-    When $c-2$ dirty ancillae are available, a controlled-not with $c$ controls can be reduced into $4c - 8$ Toffoli gates.
+    When $c-2$ dirty ancillae are available, a controlled-not with $c$ controls can be reduced into $4c - 8$ Toffoli gates \cite{barenco1995}.
+    It is possible to reduce the number of ancilla needed to just one, by using twice as many Toffoli gates, but that construction isn't needed in the context of period finding because there are always enough unused qubits to borrow.
   }
   \label{fig:cnot-reduction}
 \end{figure}
