@@ -1,3 +1,3 @@
 numpy
 pytest
-projectq
+projectq==0.3.1
