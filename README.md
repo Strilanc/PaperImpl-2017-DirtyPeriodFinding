@@ -78,7 +78,7 @@ These instructions explain the steps involved in getting the code from this repo
 
     `sudo -H pip install pybind11`
 
-    `sudo -H pip install projectq==0.3.1`
+    `sudo -H pip install -r requirements.txt`
 
 0. *(Optional)* Run tests and example code.
 
