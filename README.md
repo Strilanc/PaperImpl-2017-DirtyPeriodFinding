@@ -1,8 +1,8 @@
 # Dirty Period Finding with 2n+1 qubits
 
 This repository contains code for generating and validating the
-constructions from my [work in progress]
-"Factoring with n+2 clean qubits and n-1 dirty qubits".
+constructions from my [preprint
+"Factoring with n+2 clean qubits and n-1 dirty qubits"](https://arxiv.org/abs/1706.07884).
 
 
 # Table of Circuit Constructions
